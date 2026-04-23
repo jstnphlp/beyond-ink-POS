@@ -33,7 +33,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const allowed = await isEmailWhitelisted(supabase, email);
+  const allowed = await isEmailWhitelisted(
+    (normalizedEmail) =>
+      supabase.from("allowed_users").select("email").eq("email", normalizedEmail).maybeSingle(),
+    email,
+  );
 
   if (!allowed) {
     await supabase.auth.signOut();

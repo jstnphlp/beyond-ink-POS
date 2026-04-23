@@ -22,42 +22,26 @@ describe("isEmailWhitelisted", () => {
   it("queries the allowlist with the normalized email", async () => {
     const calls: Array<{ column: string; value: string }> = [];
 
-    const client = {
-      from: () => ({
-        select: () => ({
-          eq: (column: string, value: string) => {
-            calls.push({ column, value });
+    const lookup = async (email: string) => {
+      calls.push({ column: "email", value: email });
 
-            return {
-              maybeSingle: async () => ({
-                data: { email: "owner@beyondink.com" },
-                error: null,
-              }),
-            };
-          },
-        }),
-      }),
+      return {
+        data: { email: "owner@beyondink.com" },
+        error: null,
+      };
     };
 
-    await expect(isEmailWhitelisted(client, " Owner@BeyondInk.com ")).resolves.toBe(true);
+    await expect(isEmailWhitelisted(lookup, " Owner@BeyondInk.com ")).resolves.toBe(true);
     expect(calls).toEqual([{ column: "email", value: "owner@beyondink.com" }]);
   });
 
   it("returns false when the email is empty", async () => {
-    const client = {
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({
-              data: null,
-              error: null,
-            }),
-          }),
-        }),
-      }),
-    };
+    const lookup = async () => ({
+      data: null,
+      error: null,
+    });
 
-    await expect(isEmailWhitelisted(client, "")).resolves.toBe(false);
+    await expect(isEmailWhitelisted(lookup, "")).resolves.toBe(false);
   });
 });
 

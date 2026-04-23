@@ -14,7 +14,11 @@ export async function getAuthorizedUser() {
     return null;
   }
 
-  const allowed = await isEmailWhitelisted(supabase, email);
+  const allowed = await isEmailWhitelisted(
+    (normalizedEmail) =>
+      supabase.from("allowed_users").select("email").eq("email", normalizedEmail).maybeSingle(),
+    email,
+  );
 
   if (!allowed) {
     return null;
