@@ -251,15 +251,8 @@ export async function revalidateSetupData() {
     throw new Error("Unauthorized");
   }
 
-  revalidateTag("sales-setup-data");
-  revalidatePath("/dashboard/sales");
-}
-    throw new Error("Unauthorized");
-  }
-
-  const { revalidateTag } = await import("next/cache");
-  revalidateTag("sales-setup-data");
-  revalidatePath("/dashboard/sales");
+  revalidateTag("sales-setup-data", {});
+  revalidatePath("/dashboard/sales", "page");
 }
 
 export async function updateTransactionDates(
