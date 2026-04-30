@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { RefreshSettingsButton } from "./refresh-settings-button";
 
 export function SalesShell({
   title,
@@ -25,6 +26,7 @@ export function SalesShell({
               <Link className="buttonSecondary" href="/dashboard/sales/history">
                 History
               </Link>
+              <RefreshSettingsButton />
               <Link className="buttonSecondary" href="/dashboard">
                 Back to dashboard
               </Link>

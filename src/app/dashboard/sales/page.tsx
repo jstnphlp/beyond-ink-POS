@@ -13,8 +13,12 @@ export default async function SalesPage() {
   }
 
   let setupData;
+  let drafts;
   try {
-    setupData = await getSalesSetupData();
+    [setupData, drafts] = await Promise.all([
+      getSalesSetupData(),
+      getDraftTransactions(),
+    ]);
   } catch (err: unknown) {
     const message =
       err && typeof err === "object" && "message" in err
@@ -25,7 +29,7 @@ export default async function SalesPage() {
         ? String((err as { code: string }).code)
         : undefined;
 
-    console.error("[SalesPage] Failed to load setup data:", err);
+    console.error("[SalesPage] Failed to load data:", err);
 
     return (
       <SalesShell
@@ -48,8 +52,6 @@ export default async function SalesPage() {
       </SalesShell>
     );
   }
-
-  const drafts = await getDraftTransactions();
 
   return (
     <SalesShell

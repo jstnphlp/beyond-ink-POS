@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
 import {
@@ -243,6 +243,23 @@ export async function deleteTransaction(transactionId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/sales");
   revalidatePath("/dashboard/sales/history");
+}
+
+export async function revalidateSetupData() {
+  const user = await getAuthorizedUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  revalidateTag("sales-setup-data");
+  revalidatePath("/dashboard/sales");
+}
+    throw new Error("Unauthorized");
+  }
+
+  const { revalidateTag } = await import("next/cache");
+  revalidateTag("sales-setup-data");
+  revalidatePath("/dashboard/sales");
 }
 
 export async function updateTransactionDates(

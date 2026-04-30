@@ -1,4 +1,5 @@
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -40,8 +41,17 @@ export type TransactionListItem = {
   draft_payload: any;
 };
 
-export const getSalesSetupData = cache(async (): Promise<SalesSetupData> => {
-  const supabase = await createServerClient();
+// Create a generic anonymous client to safely use inside unstable_cache (since it doesn't access cookies)
+function createAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  );
+}
+
+export const getSalesSetupData = unstable_cache(
+  async (): Promise<SalesSetupData> => {
+    const supabase = createAnonClient();
 
   const [categoriesResult, servicesResult, addOnsResult, inventoryItemsResult, pricingReferencesResult] =
     await Promise.all([
@@ -82,7 +92,10 @@ export const getSalesSetupData = cache(async (): Promise<SalesSetupData> => {
     inventoryItems: inventoryItemsResult.data ?? [],
     pricingReferences: pricingReferencesResult.data ?? [],
   };
-});
+  },
+  ["sales-setup-data"],
+  { tags: ["sales-setup-data"], revalidate: 3600 }
+);
 
 export async function getDraftTransactions(): Promise<DraftTransactionListItem[]> {
   const supabase = await createServerClient();
