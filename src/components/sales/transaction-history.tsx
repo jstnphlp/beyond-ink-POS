@@ -7,7 +7,12 @@ import {
   deleteTransaction,
   updateTransactionDates,
 } from "@/app/dashboard/sales/actions";
+import {
+  calculateFinalTotal,
+  calculateSubtotal,
+} from "@/lib/sales/calculations";
 import type { TransactionListItem } from "@/lib/sales/queries";
+import type { DraftSaleInput } from "@/lib/sales/types";
 
 export function TransactionHistory({
   transactions,
@@ -19,6 +24,7 @@ export function TransactionHistory({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCreated, setEditCreated] = useState("");
   const [editCompleted, setEditCompleted] = useState("");
+  const [selectedTxn, setSelectedTxn] = useState<TransactionListItem | null>(null);
 
   if (transactions.length === 0) {
     return (
@@ -63,17 +69,121 @@ export function TransactionHistory({
   }
 
   function handleDelete(txnId: string) {
-    if (!confirm("Are you sure you want to permanently delete this transaction?")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to permanently delete this transaction? This will free up the transaction number for reuse.")) return;
     startTransition(async () => {
       try {
         await deleteTransaction(txnId);
         router.refresh();
       } catch (err) {
-        console.error("Failed to delete:", err);
+        console.error("Failed to delete transaction:", err);
+        alert("Failed to delete transaction. It may be locked or you lack permission.");
       }
     });
+  }
+
+  function renderReceiptModal() {
+    if (!selectedTxn) return null;
+    const payload = selectedTxn.draft_payload as DraftSaleInput;
+    if (!payload) return null;
+
+    const subtotal = calculateSubtotal(payload);
+    const finalTotal = calculateFinalTotal({
+      subtotal,
+      discount: payload.discount,
+      deliveryFee: payload.delivery?.enabled ? payload.delivery.deliveryFee : 0,
+    });
+
+    return (
+      <div className="modalOverlay" onClick={() => setSelectedTxn(null)}>
+        <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+          <div className="modalHeader">
+            <div>
+              <h2>Receipt #{selectedTxn.transaction_number}</h2>
+              <p>{new Date(selectedTxn.completed_at || selectedTxn.created_at).toLocaleString()}</p>
+              <p>Cashier: {selectedTxn.cashier_name}</p>
+            </div>
+            <button className="buttonSmall buttonSmall--ghost" onClick={() => setSelectedTxn(null)}>
+              Close
+            </button>
+          </div>
+
+          <div className="receiptSection">
+            <h3>Items</h3>
+            {payload.serviceLines.map((line) => (
+              <div key={line.id} style={{ marginBottom: "16px" }}>
+                <strong>{line.serviceName}</strong>
+                {line.materials.map((mat) => {
+                  const matTotal = mat.quantity * mat.unitPrice;
+                  return (
+                    <div key={mat.id} style={{ paddingLeft: "8px", marginTop: "4px" }}>
+                      <div className="receiptRow">
+                        <span>{mat.quantity}x {mat.materialName} (₱{mat.unitPrice})</span>
+                        <span>₱{matTotal.toFixed(2)}</span>
+                      </div>
+                      {mat.addOns.map((add) => (
+                        <div key={add.id} className="receiptRow" style={{ paddingLeft: "8px", opacity: 0.8 }}>
+                          <span>+ {add.quantity}x {add.name} (₱{add.unitPrice})</span>
+                          <span>₱{(add.quantity * add.unitPrice).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <div className="receiptSection">
+            <div className="receiptRow">
+              <span>Subtotal</span>
+              <span>₱{subtotal.toFixed(2)}</span>
+            </div>
+            {payload.discount && (
+              <div className="receiptRow">
+                <span>Discount ({payload.discount.type === "percentage" ? `${payload.discount.value}%` : `₱${payload.discount.value}`})</span>
+                <span>
+                  -₱
+                  {payload.discount.type === "percentage"
+                    ? ((subtotal * payload.discount.value) / 100).toFixed(2)
+                    : payload.discount.value.toFixed(2)}
+                </span>
+              </div>
+            )}
+            {payload.delivery?.enabled && (
+              <div className="receiptRow">
+                <span>Delivery Fee</span>
+                <span>₱{payload.delivery.deliveryFee.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="receiptTotal">
+              <span>Total</span>
+              <span>₱{finalTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {payload.payment && (
+            <div className="receiptSection" style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border)" }}>
+              <div className="receiptRow">
+                <span>Payment Method</span>
+                <span style={{ textTransform: "capitalize" }}>{payload.payment.method}</span>
+              </div>
+              {payload.payment.method === "cash" && (
+                <>
+                  <div className="receiptRow">
+                    <span>Cash Received</span>
+                    <span>₱{payload.payment.cashReceived.toFixed(2)}</span>
+                  </div>
+                  <div className="receiptRow">
+                    <span>Change</span>
+                    <span>₱{(payload.payment.cashReceived - finalTotal).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -170,6 +280,14 @@ export function TransactionHistory({
                     <td>
                       <div className="txnActions">
                         <button
+                          className="buttonSmall"
+                          disabled={isPending}
+                          type="button"
+                          onClick={() => setSelectedTxn(txn)}
+                        >
+                          View
+                        </button>
+                        <button
                           className="buttonSmall buttonSmall--ghost"
                           disabled={isPending}
                           type="button"
@@ -194,6 +312,8 @@ export function TransactionHistory({
           </tbody>
         </table>
       </section>
+
+      {renderReceiptModal()}
     </>
   );
 }

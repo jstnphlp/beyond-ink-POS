@@ -37,6 +37,7 @@ export type TransactionListItem = {
   created_at: string;
   completed_at: string | null;
   cancelled_at: string | null;
+  draft_payload: any;
 };
 
 export const getSalesSetupData = cache(async (): Promise<SalesSetupData> => {
@@ -129,7 +130,7 @@ export async function getTransactionHistory(): Promise<TransactionListItem[]> {
   const { data, error } = await supabase
     .from("sales_transactions")
     .select("id, transaction_number, status, cashier_name, final_total, created_at, completed_at, cancelled_at")
-    .eq("status", "completed")
+    .in("status", ["completed", "cancelled"])
     .order("transaction_number", { ascending: false });
 
   if (error) throw error;
