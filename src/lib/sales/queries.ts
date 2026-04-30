@@ -42,16 +42,19 @@ export type TransactionListItem = {
 };
 
 // Create a generic anonymous client to safely use inside unstable_cache (since it doesn't access cookies)
-function createAnonClient() {
+function createAnonClient(token?: string) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    token
+      ? { global: { headers: { Authorization: `Bearer ${token}` } } }
+      : undefined
   );
 }
 
-export const getSalesSetupData = unstable_cache(
-  async (): Promise<SalesSetupData> => {
-    const supabase = createAnonClient();
+const getCachedSalesSetupData = unstable_cache(
+  async (token: string): Promise<SalesSetupData> => {
+    const supabase = createAnonClient(token);
 
   const [categoriesResult, servicesResult, addOnsResult, inventoryItemsResult, pricingReferencesResult] =
     await Promise.all([
@@ -96,6 +99,16 @@ export const getSalesSetupData = unstable_cache(
   ["sales-setup-data"],
   { tags: ["sales-setup-data"], revalidate: 3600 }
 );
+
+export async function getSalesSetupData(): Promise<SalesSetupData> {
+  const supabase = await createServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // If no token exists, provide empty string; the query will fail RLS if unauthenticated.
+  return getCachedSalesSetupData(session?.access_token ?? "");
+}
 
 export async function getDraftTransactions(): Promise<DraftTransactionListItem[]> {
   const supabase = await createServerClient();
