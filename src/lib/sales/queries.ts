@@ -130,7 +130,7 @@ export async function getTransactionHistory(): Promise<TransactionListItem[]> {
     .from("sales_transactions")
     .select("id, transaction_number, status, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .in("status", ["completed", "cancelled"])
-    .order("created_at", { ascending: false });
+    .order("transaction_number", { ascending: false });
 
   if (error) throw error;
 

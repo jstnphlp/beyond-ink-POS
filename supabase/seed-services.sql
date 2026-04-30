@@ -43,11 +43,13 @@ DECLARE
     s_photocopy_bw         UUID := 'b0000000-0000-0000-0000-000000000042';
     s_photocopy_colored    UUID := 'b0000000-0000-0000-0000-000000000043';
     s_scanning             UUID := 'b0000000-0000-0000-0000-000000000003';
-    s_laminating           UUID := 'b0000000-0000-0000-0000-000000000005';
+    s_hot_laminating       UUID := 'b0000000-0000-0000-0000-000000000045';
+    s_cold_laminating      UUID := 'b0000000-0000-0000-0000-000000000046';
 
     -- Old generic services to deactivate
     s_old_standard_printing UUID := 'b0000000-0000-0000-0000-000000000001';
     s_old_photocopy         UUID := 'b0000000-0000-0000-0000-000000000002';
+    s_old_laminating        UUID := 'b0000000-0000-0000-0000-000000000005';
 
     -- Photo Printing (category) sub-services
     s_3r_photo  UUID := 'b0000000-0000-0000-0000-000000000010';
@@ -90,7 +92,9 @@ DECLARE
     m_vinyl_sticker  UUID := 'c0000000-0000-0000-0000-000000000013';
     m_sticker_matte  UUID := 'c0000000-0000-0000-0000-000000000023';
     m_sticker_glossy UUID := 'c0000000-0000-0000-0000-000000000024';
-    m_laminate_film  UUID := 'c0000000-0000-0000-0000-000000000029';
+    m_lam_id         UUID := 'c0000000-0000-0000-0000-000000000030';
+    m_lam_half       UUID := 'c0000000-0000-0000-0000-000000000031';
+    m_lam_a4         UUID := 'c0000000-0000-0000-0000-000000000032';
     m_sintra_board   UUID := 'c0000000-0000-0000-0000-000000000014';
     m_cardstock      UUID := 'c0000000-0000-0000-0000-000000000015';
     m_brochure_paper UUID := 'c0000000-0000-0000-0000-000000000016';
@@ -120,7 +124,8 @@ BEGIN
         (s_photocopy_bw,         'Photocopy / Xerox (Black)',    cat_standard_printing, true),
         (s_photocopy_colored,    'Photocopy / Xerox (Colored)',  cat_standard_printing, true),
         (s_scanning,             'Scanning',                     cat_standard_printing, true),
-        (s_laminating,           'Laminating',                   cat_standard_printing, true),
+        (s_hot_laminating,       'Hot Laminating',               cat_standard_printing, true),
+        (s_cold_laminating,      'Phototop/Coldtop',             cat_standard_printing, true),
 
         -- Photo Printing
         (s_3r_photo,  '3R Photo Print',  cat_photo_printing, true),
@@ -148,7 +153,7 @@ BEGIN
     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category_id = EXCLUDED.category_id, is_active = EXCLUDED.is_active;
 
     -- Deactivate old generic services that have been replaced by specific ones
-    UPDATE public.services SET is_active = false WHERE id IN (s_old_photo_printing, s_old_others, s_old_advanced_services, s_old_standard_printing, s_old_photocopy);
+    UPDATE public.services SET is_active = false WHERE id IN (s_old_photo_printing, s_old_others, s_old_advanced_services, s_old_standard_printing, s_old_photocopy, s_old_laminating);
 
     -- ═══════════════════════════════════════
     -- 3. Inventory Items (Materials)
@@ -164,7 +169,9 @@ BEGIN
         (m_sticker_matte,  'Sticker Paper - A4 Matte (135gsm)',       'sheet'),
         (m_sticker_glossy, 'Sticker Paper - A4 Glossy (135gsm)',      'sheet'),
         (m_sintra_board,   'Sintra Board - A4 (3mm)',                  'sheet'),
-        (m_laminate_film,  'Laminate Film',                            'sheet'),
+        (m_lam_id,         'Laminating Film - ID Size',                'piece'),
+        (m_lam_half,       'Laminating Film - Half A4/Letter',         'piece'),
+        (m_lam_a4,         'Laminating Film - A4/Letter',              'piece'),
         (m_cardstock,      'Cardstock (250-340gsm)',                   'sheet'),
         (m_brochure_paper, 'Glossy/Matte Brochure Paper (100-115gsm)','sheet'),
         (m_specialty_board,'Specialty Board (200gsm)',                  'sheet'),
@@ -200,8 +207,15 @@ BEGIN
         -- Scanning: ₱10 per page
         (s_scanning, m_digital_output, 10.00),
 
-        -- Laminating: ₱20
-        (s_laminating, m_laminate_film, 20.00),
+        -- Hot Laminating: ID ₱20, Half ₱35, A4 ₱50
+        (s_hot_laminating, m_lam_id,   20.00),
+        (s_hot_laminating, m_lam_half, 35.00),
+        (s_hot_laminating, m_lam_a4,   50.00),
+
+        -- Phototop / Coldtop: ID ₱20, Half ₱35, A4 ₱50
+        (s_cold_laminating, m_lam_id,   20.00),
+        (s_cold_laminating, m_lam_half, 35.00),
+        (s_cold_laminating, m_lam_a4,   50.00),
 
         -- Photo Printing
         (s_3r_photo, m_photo_paper_3r, 8.00),
