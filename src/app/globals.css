@@ -56,7 +56,7 @@ button {
 }
 
 .shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 32px 20px 48px;
 }
 
@@ -447,7 +447,7 @@ button {
   border-radius: 8px;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 16px;
   padding: 6px 8px;
   width: 100%;
 }
@@ -638,8 +638,10 @@ button {
   background: white;
   border: 1px solid var(--border);
   border-radius: 14px;
+  font-size: 16px;
   min-height: 44px;
   padding: 10px 12px;
+  max-width: 100%;
 }
 
 .salesCard,
@@ -726,7 +728,22 @@ button {
   }
 
   .salesStepper {
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .salesStepper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .salesStepBadge {
+    flex: 0 0 80%;
+    scroll-snap-align: center;
   }
 
   .salesLayout {
@@ -736,5 +753,15 @@ button {
   .draftSidebar {
     position: static;
     max-height: none;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__actions .button,
+  .hero__actions .buttonSecondary {
+    width: 100%;
   }
 }

@@ -24,7 +24,9 @@ export function TransactionHistory({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCreated, setEditCreated] = useState("");
   const [editCompleted, setEditCompleted] = useState("");
-  const [selectedTxn, setSelectedTxn] = useState<TransactionListItem | null>(null);
+  const [selectedTxn, setSelectedTxn] = useState<TransactionListItem | null>(
+    null,
+  );
 
   if (transactions.length === 0) {
     return (
@@ -57,8 +59,12 @@ export function TransactionHistory({
     startTransition(async () => {
       try {
         await updateTransactionDates(txnId, {
-          created_at: editCreated ? new Date(editCreated).toISOString() : undefined,
-          completed_at: editCompleted ? new Date(editCompleted).toISOString() : null,
+          created_at: editCreated
+            ? new Date(editCreated).toISOString()
+            : undefined,
+          completed_at: editCompleted
+            ? new Date(editCompleted).toISOString()
+            : null,
         });
         setEditingId(null);
         router.refresh();
@@ -69,14 +75,21 @@ export function TransactionHistory({
   }
 
   function handleDelete(txnId: string) {
-    if (!confirm("Are you sure you want to permanently delete this transaction? This will free up the transaction number for reuse.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to permanently delete this transaction? This will free up the transaction number for reuse.",
+      )
+    )
+      return;
     startTransition(async () => {
       try {
         await deleteTransaction(txnId);
         router.refresh();
       } catch (err) {
         console.error("Failed to delete transaction:", err);
-        alert("Failed to delete transaction. It may be locked or you lack permission.");
+        alert(
+          "Failed to delete transaction. It may be locked or you lack permission.",
+        );
       }
     });
   }
@@ -99,10 +112,17 @@ export function TransactionHistory({
           <div className="modalHeader">
             <div>
               <h2>Receipt #{selectedTxn.transaction_number}</h2>
-              <p>{new Date(selectedTxn.completed_at || selectedTxn.created_at).toLocaleString()}</p>
+              <p>
+                {new Date(
+                  selectedTxn.completed_at || selectedTxn.created_at,
+                ).toLocaleString()}
+              </p>
               <p>Cashier: {selectedTxn.cashier_name}</p>
             </div>
-            <button className="buttonSmall buttonSmall--ghost" onClick={() => setSelectedTxn(null)}>
+            <button
+              className="buttonSmall buttonSmall--ghost"
+              onClick={() => setSelectedTxn(null)}
+            >
               Close
             </button>
           </div>
@@ -115,15 +135,28 @@ export function TransactionHistory({
                 {line.materials.map((mat) => {
                   const matTotal = mat.quantity * mat.unitPrice;
                   return (
-                    <div key={mat.id} style={{ paddingLeft: "8px", marginTop: "4px" }}>
+                    <div
+                      key={mat.id}
+                      style={{ paddingLeft: "8px", marginTop: "4px" }}
+                    >
                       <div className="receiptRow">
-                        <span>{mat.quantity}x {mat.materialName} (₱{mat.unitPrice})</span>
+                        <span>
+                          {mat.quantity}x {mat.materialName} (₱{mat.unitPrice})
+                        </span>
                         <span>₱{matTotal.toFixed(2)}</span>
                       </div>
                       {mat.addOns.map((add) => (
-                        <div key={add.id} className="receiptRow" style={{ paddingLeft: "8px", opacity: 0.8 }}>
-                          <span>+ {add.quantity}x {add.name} (₱{add.unitPrice})</span>
-                          <span>₱{(add.quantity * add.unitPrice).toFixed(2)}</span>
+                        <div
+                          key={add.id}
+                          className="receiptRow"
+                          style={{ paddingLeft: "8px", opacity: 0.8 }}
+                        >
+                          <span>
+                            + {add.quantity}x {add.name} (₱{add.unitPrice})
+                          </span>
+                          <span>
+                            ₱{(add.quantity * add.unitPrice).toFixed(2)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -140,7 +173,13 @@ export function TransactionHistory({
             </div>
             {payload.discount && (
               <div className="receiptRow">
-                <span>Discount ({payload.discount.type === "percentage" ? `${payload.discount.value}%` : `₱${payload.discount.value}`})</span>
+                <span>
+                  Discount (
+                  {payload.discount.type === "percentage"
+                    ? `${payload.discount.value}%`
+                    : `₱${payload.discount.value}`}
+                  )
+                </span>
                 <span>
                   -₱
                   {payload.discount.type === "percentage"
@@ -162,10 +201,19 @@ export function TransactionHistory({
           </div>
 
           {payload.payment && (
-            <div className="receiptSection" style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid var(--border)" }}>
+            <div
+              className="receiptSection"
+              style={{
+                marginTop: "24px",
+                paddingTop: "16px",
+                borderTop: "1px solid var(--border)",
+              }}
+            >
               <div className="receiptRow">
                 <span>Payment Method</span>
-                <span style={{ textTransform: "capitalize" }}>{payload.payment.method}</span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {payload.payment.method}
+                </span>
               </div>
               {payload.payment.method === "cash" && (
                 <>
@@ -175,7 +223,9 @@ export function TransactionHistory({
                   </div>
                   <div className="receiptRow">
                     <span>Change</span>
-                    <span>₱{(payload.payment.cashReceived - finalTotal).toFixed(2)}</span>
+                    <span>
+                      ₱{(payload.payment.cashReceived - finalTotal).toFixed(2)}
+                    </span>
                   </div>
                 </>
               )}
@@ -192,7 +242,8 @@ export function TransactionHistory({
         <div className="revenueCard revenueCard--primary">
           <span className="revenueCard__label">Total Revenue</span>
           <span className="revenueCard__value">
-            ₱{totalRevenue.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+            ₱
+            {totalRevenue.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </span>
         </div>
         <div className="revenueCard">
@@ -202,115 +253,121 @@ export function TransactionHistory({
       </div>
 
       <section className="panel" style={{ padding: 0, overflow: "hidden" }}>
-        <table className="txnTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Cashier</th>
-              <th>Status</th>
-              <th>Total</th>
-              <th>Created</th>
-              <th>Completed</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((txn) => (
-              <tr key={txn.id}>
-                <td>
-                  <strong>{txn.transaction_number}</strong>
-                </td>
-                <td>{txn.cashier_name}</td>
-                <td>
-                  <span className="badge badge--success">
-                    Completed
-                  </span>
-                </td>
-                <td>₱{Number(txn.final_total).toFixed(2)}</td>
-
-                {editingId === txn.id ? (
-                  <>
-                    <td>
-                      <input
-                        className="txnDateInput"
-                        type="datetime-local"
-                        value={editCreated}
-                        onChange={(e) => setEditCreated(e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="txnDateInput"
-                        type="datetime-local"
-                        value={editCompleted}
-                        onChange={(e) => setEditCompleted(e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <div className="txnActions">
-                        <button
-                          className="buttonSmall"
-                          disabled={isPending}
-                          type="button"
-                          onClick={() => saveEdit(txn.id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="buttonSmall buttonSmall--ghost"
-                          disabled={isPending}
-                          type="button"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="muted">
-                      {new Date(txn.created_at).toLocaleString()}
-                    </td>
-                    <td className="muted">
-                      {txn.completed_at
-                        ? new Date(txn.completed_at).toLocaleString()
-                        : "—"}
-                    </td>
-                    <td>
-                      <div className="txnActions">
-                        <button
-                          className="buttonSmall"
-                          disabled={isPending}
-                          type="button"
-                          onClick={() => setSelectedTxn(txn)}
-                        >
-                          View
-                        </button>
-                        <button
-                          className="buttonSmall buttonSmall--ghost"
-                          disabled={isPending}
-                          type="button"
-                          onClick={() => startEdit(txn)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="buttonSmall buttonSmall--danger"
-                          disabled={isPending}
-                          type="button"
-                          onClick={() => handleDelete(txn.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                )}
+        <div
+          style={{
+            overflowX: "auto",
+            width: "100%",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <table className="txnTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Cashier</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Created</th>
+                <th>Completed</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {transactions.map((txn) => (
+                <tr key={txn.id}>
+                  <td>
+                    <strong>{txn.transaction_number}</strong>
+                  </td>
+                  <td>{txn.cashier_name}</td>
+                  <td>
+                    <span className="badge badge--success">Completed</span>
+                  </td>
+                  <td>₱{Number(txn.final_total).toFixed(2)}</td>
+
+                  {editingId === txn.id ? (
+                    <>
+                      <td>
+                        <input
+                          className="txnDateInput"
+                          type="datetime-local"
+                          value={editCreated}
+                          onChange={(e) => setEditCreated(e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="txnDateInput"
+                          type="datetime-local"
+                          value={editCompleted}
+                          onChange={(e) => setEditCompleted(e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <div className="txnActions">
+                          <button
+                            className="buttonSmall"
+                            disabled={isPending}
+                            type="button"
+                            onClick={() => saveEdit(txn.id)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="buttonSmall buttonSmall--ghost"
+                            disabled={isPending}
+                            type="button"
+                            onClick={() => setEditingId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="muted">
+                        {new Date(txn.created_at).toLocaleString()}
+                      </td>
+                      <td className="muted">
+                        {txn.completed_at
+                          ? new Date(txn.completed_at).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+                        <div className="txnActions">
+                          <button
+                            className="buttonSmall"
+                            disabled={isPending}
+                            type="button"
+                            onClick={() => setSelectedTxn(txn)}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="buttonSmall buttonSmall--ghost"
+                            disabled={isPending}
+                            type="button"
+                            onClick={() => startEdit(txn)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="buttonSmall buttonSmall--danger"
+                            disabled={isPending}
+                            type="button"
+                            onClick={() => handleDelete(txn.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {renderReceiptModal()}
