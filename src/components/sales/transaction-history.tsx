@@ -23,14 +23,12 @@ export function TransactionHistory({
   if (transactions.length === 0) {
     return (
       <section className="panel">
-        <p className="muted">No completed or cancelled transactions yet.</p>
+        <p className="muted">No completed transactions yet.</p>
       </section>
     );
   }
 
-  const completedTxns = transactions.filter((t) => t.status === "completed");
-  const cancelledTxns = transactions.filter((t) => t.status === "cancelled");
-  const totalRevenue = completedTxns.reduce(
+  const totalRevenue = transactions.reduce(
     (sum, t) => sum + Number(t.final_total),
     0,
   );
@@ -89,11 +87,7 @@ export function TransactionHistory({
         </div>
         <div className="revenueCard">
           <span className="revenueCard__label">Completed</span>
-          <span className="revenueCard__value">{completedTxns.length}</span>
-        </div>
-        <div className="revenueCard">
-          <span className="revenueCard__label">Cancelled</span>
-          <span className="revenueCard__value">{cancelledTxns.length}</span>
+          <span className="revenueCard__value">{transactions.length}</span>
         </div>
       </div>
 
@@ -118,14 +112,8 @@ export function TransactionHistory({
                 </td>
                 <td>{txn.cashier_name}</td>
                 <td>
-                  <span
-                    className={
-                      txn.status === "completed"
-                        ? "badge badge--success"
-                        : "badge badge--cancelled"
-                    }
-                  >
-                    {txn.status === "completed" ? "Completed" : "Cancelled"}
+                  <span className="badge badge--success">
+                    Completed
                   </span>
                 </td>
                 <td>₱{Number(txn.final_total).toFixed(2)}</td>

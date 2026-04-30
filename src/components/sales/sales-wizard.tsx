@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { cancelSale, completeSale, saveDraft } from "@/app/dashboard/sales/actions";
+import { deleteTransaction, completeSale, saveDraft } from "@/app/dashboard/sales/actions";
 import {
   calculateFinalTotal,
   calculateSubtotal,
@@ -112,21 +112,11 @@ export function SalesWizard({
   function handleCancel() {
     startTransition(async () => {
       try {
-        let transactionId = sale.transactionId;
-
-        if (!transactionId) {
-          const savedDraft = await saveDraft(sale);
-
-          if (!savedDraft.ok) {
-            setErrors(savedDraft.errors);
-            return;
-          }
-
-          transactionId = savedDraft.transactionId;
+        if (sale.transactionId) {
+          await deleteTransaction(sale.transactionId);
         }
 
-        await cancelSale(transactionId);
-        setMessage("Transaction cancelled.");
+        setMessage("Transaction deleted.");
         router.push("/dashboard/sales");
         router.refresh();
       } catch (error) {
