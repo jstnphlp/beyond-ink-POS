@@ -46,6 +46,8 @@ export type SalePaymentInput =
   | { method: "gcash"; amountPaid: number };
 
 export type DraftSaleInput = {
+  transactionId?: string;
+  transactionNumber?: number;
   cashierName: string;
   status: TransactionStatus;
   serviceLines: SaleServiceLineInput[];
