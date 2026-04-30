@@ -149,18 +149,7 @@ export function SalesWizard({
           return;
         }
 
-        setSale({
-          ...sale,
-          status: "completed",
-          transactionId: result.transactionId,
-          transactionNumber: result.transactionNumber ?? undefined,
-        });
         setErrors([]);
-        setMessage(
-          result.transactionNumber
-            ? `Sale completed as #${result.transactionNumber}.`
-            : "Sale completed.",
-        );
         router.push("/dashboard/sales");
         router.refresh();
       } catch (error) {
