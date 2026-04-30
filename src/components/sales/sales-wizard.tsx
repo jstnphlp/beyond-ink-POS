@@ -161,6 +161,7 @@ export function SalesWizard({
             ? `Sale completed as #${result.transactionNumber}.`
             : "Sale completed.",
         );
+        router.push("/dashboard/sales");
         router.refresh();
       } catch (error) {
         setErrors([

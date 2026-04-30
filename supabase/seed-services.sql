@@ -56,7 +56,8 @@ DECLARE
     -- Others (category) sub-services
     s_certificates   UUID := 'b0000000-0000-0000-0000-000000000020';
     s_flyers         UUID := 'b0000000-0000-0000-0000-000000000021';
-    s_business_cards UUID := 'b0000000-0000-0000-0000-000000000022';
+    s_business_cards  UUID := 'b0000000-0000-0000-0000-000000000022';
+    s_simple_editing UUID := 'b0000000-0000-0000-0000-000000000023';
 
     -- Advanced Services (category) sub-services
     s_typing         UUID := 'b0000000-0000-0000-0000-000000000030';
@@ -127,6 +128,7 @@ BEGIN
         (s_certificates,   'Certificates & Award',       cat_others, true),
         (s_flyers,         'Flyers/Tri-Fold Brochures',  cat_others, true),
         (s_business_cards, 'Business Cards',             cat_others, true),
+        (s_simple_editing, 'Simple Editing',              cat_others, true),
 
         -- Advanced Services
         (s_typing,        'Typing',           cat_advanced, true),
@@ -207,6 +209,9 @@ BEGIN
 
         -- Business Cards: ₱50/set (10pcs)
         (s_business_cards, m_cardstock, 50.00),
+
+        -- Simple Editing: ₱20 (no material)
+        (s_simple_editing, m_digital_output, 20.00),
 
         -- Typing: ₱40/page
         (s_typing, m_digital_output, 40.00),
