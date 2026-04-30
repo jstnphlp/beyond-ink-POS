@@ -88,7 +88,7 @@ export async function getDraftTransactionById(
   const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("sales_transactions")
-    .select("draft_payload")
+    .select("id, transaction_number, draft_payload")
     .eq("id", transactionId)
     .eq("status", "draft")
     .maybeSingle();
@@ -98,5 +98,9 @@ export async function getDraftTransactionById(
     return null;
   }
 
-  return data.draft_payload as DraftSaleInput;
+  return {
+    ...(data.draft_payload as DraftSaleInput),
+    transactionId: data.id,
+    transactionNumber: data.transaction_number ?? undefined,
+  };
 }

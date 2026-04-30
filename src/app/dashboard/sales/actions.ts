@@ -140,5 +140,32 @@ export async function completeSale(input: DraftSaleInput): Promise<MutationResul
     };
   }
 
-  return upsertTransaction(input, "completed");
+  const result = await upsertTransaction(input, "completed");
+
+  if (!result.ok) {
+    return result;
+  }
+
+  const user = await getAuthorizedUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createServerClient();
+
+  for (const serviceLine of input.serviceLines) {
+    for (const material of serviceLine.materials) {
+      const { error } = await supabase.rpc("decrement_inventory_item_stock", {
+        inventory_item_id_input: material.inventoryItemId,
+        quantity_input: material.quantity,
+        transaction_id_input: result.transactionId,
+      });
+
+      if (error) {
+        throw error;
+      }
+    }
+  }
+
+  return result;
 }
