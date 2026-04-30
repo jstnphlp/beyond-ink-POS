@@ -38,10 +38,16 @@ DECLARE
     -- Service IDs
     -- ═══════════════════════════════════════
     -- Standard Printing (category) sub-services
-    s_standard_printing UUID := 'b0000000-0000-0000-0000-000000000001';
-    s_photocopy         UUID := 'b0000000-0000-0000-0000-000000000002';
-    s_scanning          UUID := 'b0000000-0000-0000-0000-000000000003';
-    s_laminating        UUID := 'b0000000-0000-0000-0000-000000000005';
+    s_std_printing_bw      UUID := 'b0000000-0000-0000-0000-000000000040';
+    s_std_printing_colored UUID := 'b0000000-0000-0000-0000-000000000041';
+    s_photocopy_bw         UUID := 'b0000000-0000-0000-0000-000000000042';
+    s_photocopy_colored    UUID := 'b0000000-0000-0000-0000-000000000043';
+    s_scanning             UUID := 'b0000000-0000-0000-0000-000000000003';
+    s_laminating           UUID := 'b0000000-0000-0000-0000-000000000005';
+
+    -- Old generic services to deactivate
+    s_old_standard_printing UUID := 'b0000000-0000-0000-0000-000000000001';
+    s_old_photocopy         UUID := 'b0000000-0000-0000-0000-000000000002';
 
     -- Photo Printing (category) sub-services
     s_3r_photo  UUID := 'b0000000-0000-0000-0000-000000000010';
@@ -109,10 +115,12 @@ BEGIN
     -- ═══════════════════════════════════════
     INSERT INTO public.services (id, name, category_id, is_active) VALUES
         -- Standard Printing
-        (s_standard_printing, 'Standard Printing',  cat_standard_printing, true),
-        (s_photocopy,         'Photocopy / Xerox',  cat_standard_printing, true),
-        (s_scanning,          'Scanning',           cat_standard_printing, true),
-        (s_laminating,        'Laminating',         cat_standard_printing, true),
+        (s_std_printing_bw,      'Standard Printing (Black)',    cat_standard_printing, true),
+        (s_std_printing_colored, 'Standard Printing (Colored)',  cat_standard_printing, true),
+        (s_photocopy_bw,         'Photocopy / Xerox (Black)',    cat_standard_printing, true),
+        (s_photocopy_colored,    'Photocopy / Xerox (Colored)',  cat_standard_printing, true),
+        (s_scanning,             'Scanning',                     cat_standard_printing, true),
+        (s_laminating,           'Laminating',                   cat_standard_printing, true),
 
         -- Photo Printing
         (s_3r_photo,  '3R Photo Print',  cat_photo_printing, true),
@@ -140,7 +148,7 @@ BEGIN
     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category_id = EXCLUDED.category_id, is_active = EXCLUDED.is_active;
 
     -- Deactivate old generic services that have been replaced by specific ones
-    UPDATE public.services SET is_active = false WHERE id IN (s_old_photo_printing, s_old_others, s_old_advanced_services);
+    UPDATE public.services SET is_active = false WHERE id IN (s_old_photo_printing, s_old_others, s_old_advanced_services, s_old_standard_printing, s_old_photocopy);
 
     -- ═══════════════════════════════════════
     -- 3. Inventory Items (Materials)
@@ -169,15 +177,25 @@ BEGIN
     DELETE FROM public.service_material_prices;
 
     INSERT INTO public.service_material_prices (service_id, inventory_item_id, suggested_unit_price) VALUES
-        -- Standard Printing: B&W ₱4 / Colored ₱7 per page
-        (s_standard_printing, m_bond_short, 4.00),
-        (s_standard_printing, m_bond_a4,    4.00),
-        (s_standard_printing, m_bond_long,  4.00),
+        -- Standard Printing (Black): Short/A4 ₱4, Long ₱5
+        (s_std_printing_bw, m_bond_short, 4.00),
+        (s_std_printing_bw, m_bond_a4,    4.00),
+        (s_std_printing_bw, m_bond_long,  5.00),
 
-        -- Photocopy / Xerox: B&W ₱2 / Colored ₱7
-        (s_photocopy, m_bond_short, 2.00),
-        (s_photocopy, m_bond_a4,    2.00),
-        (s_photocopy, m_bond_long,  2.00),
+        -- Standard Printing (Colored): Short/A4 ₱7, Long ₱8
+        (s_std_printing_colored, m_bond_short, 7.00),
+        (s_std_printing_colored, m_bond_a4,    7.00),
+        (s_std_printing_colored, m_bond_long,  8.00),
+
+        -- Photocopy / Xerox (Black): Short/A4 ₱2, Long ₱3
+        (s_photocopy_bw, m_bond_short, 2.00),
+        (s_photocopy_bw, m_bond_a4,    2.00),
+        (s_photocopy_bw, m_bond_long,  3.00),
+
+        -- Photocopy / Xerox (Colored): Short/A4 ₱7, Long ₱8
+        (s_photocopy_colored, m_bond_short, 7.00),
+        (s_photocopy_colored, m_bond_a4,    7.00),
+        (s_photocopy_colored, m_bond_long,  8.00),
 
         -- Scanning: ₱10 per page
         (s_scanning, m_digital_output, 10.00),

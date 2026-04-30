@@ -222,3 +222,48 @@ export async function completeSale(input: DraftSaleInput): Promise<MutationResul
 
   return result;
 }
+
+export async function deleteTransaction(transactionId: string) {
+  const user = await getAuthorizedUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createServerClient();
+
+  const { error } = await supabase
+    .from("sales_transactions")
+    .delete()
+    .eq("id", transactionId);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/sales");
+  revalidatePath("/dashboard/sales/history");
+}
+
+export async function updateTransactionDates(
+  transactionId: string,
+  updates: { created_at?: string; completed_at?: string | null },
+) {
+  const user = await getAuthorizedUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createServerClient();
+
+  const { error } = await supabase
+    .from("sales_transactions")
+    .update(updates)
+    .eq("id", transactionId);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/dashboard/sales/history");
+}
