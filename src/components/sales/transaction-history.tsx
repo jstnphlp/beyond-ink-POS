@@ -13,7 +13,32 @@ export function TransactionHistory({
     );
   }
 
+  const completedTxns = transactions.filter((t) => t.status === "completed");
+  const cancelledTxns = transactions.filter((t) => t.status === "cancelled");
+  const totalRevenue = completedTxns.reduce(
+    (sum, t) => sum + Number(t.final_total),
+    0,
+  );
+
   return (
+    <>
+      <div className="revenueGrid">
+        <div className="revenueCard revenueCard--primary">
+          <span className="revenueCard__label">Total Revenue</span>
+          <span className="revenueCard__value">
+            ₱{totalRevenue.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div className="revenueCard">
+          <span className="revenueCard__label">Completed</span>
+          <span className="revenueCard__value">{completedTxns.length}</span>
+        </div>
+        <div className="revenueCard">
+          <span className="revenueCard__label">Cancelled</span>
+          <span className="revenueCard__value">{cancelledTxns.length}</span>
+        </div>
+      </div>
+
     <section className="panel" style={{ padding: 0, overflow: "hidden" }}>
       <table className="txnTable">
         <thead>
@@ -54,5 +79,6 @@ export function TransactionHistory({
         </tbody>
       </table>
     </section>
+    </>
   );
 }

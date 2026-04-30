@@ -359,6 +359,48 @@ button {
   background: rgba(46, 91, 100, 0.04);
 }
 
+.revenueGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 24px;
+}
+
+.revenueCard {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 24px;
+}
+
+.revenueCard--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.revenueCard__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.revenueCard--primary .revenueCard__label {
+  opacity: 0.85;
+}
+
+.revenueCard__value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;
