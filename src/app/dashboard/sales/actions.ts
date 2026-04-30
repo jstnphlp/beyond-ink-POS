@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
 import {
-  calculateCashChange,
-  calculateFinalTotal,
-  calculateSubtotal,
-} from "@/lib/sales/calculations";
+  buildDraftPayload,
+  buildNormalizedSaleRecords,
+  buildTransactionPayload,
+} from "@/lib/sales/persistence";
 import { validateCompletion } from "@/lib/sales/validation";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -16,42 +16,6 @@ import type { DraftSaleInput } from "@/lib/sales/types";
 type MutationResult =
   | { ok: true; transactionId: string; transactionNumber: number | null; errors: [] }
   | { ok: false; transactionId: null; transactionNumber: null; errors: string[] };
-
-function buildTransactionPayload(input: DraftSaleInput, status: "draft" | "completed") {
-  const subtotal = calculateSubtotal(input);
-  const finalTotal = calculateFinalTotal({
-    subtotal,
-    discount: input.discount,
-    deliveryFee: input.delivery.enabled ? input.delivery.deliveryFee : 0,
-  });
-
-  return {
-    status,
-    cashier_name: input.cashierName,
-    customer_name: input.delivery.enabled ? input.delivery.customerName : null,
-    delivery_enabled: input.delivery.enabled,
-    delivery_address: input.delivery.enabled ? input.delivery.address : null,
-    drop_off_location: input.delivery.enabled ? input.delivery.dropOffLocation : null,
-    delivery_fee: input.delivery.enabled ? input.delivery.deliveryFee : 0,
-    discount_type: input.discount?.type ?? null,
-    discount_value: input.discount?.value ?? null,
-    draft_payload: input,
-    subtotal,
-    final_total: finalTotal,
-    payment_method: input.payment?.method ?? null,
-    cash_received: input.payment?.method === "cash" ? input.payment.cashReceived : null,
-    gcash_amount_paid: input.payment?.method === "gcash" ? input.payment.amountPaid : null,
-    change_due:
-      input.payment?.method === "cash"
-        ? calculateCashChange({
-            finalTotal,
-            cashReceived: input.payment.cashReceived,
-          })
-        : null,
-    completed_at: status === "completed" ? new Date().toISOString() : null,
-    cancelled_at: null,
-  };
-}
 
 async function upsertTransaction(
   input: DraftSaleInput,
@@ -82,6 +46,62 @@ async function upsertTransaction(
 
   if (error) {
     throw error;
+  }
+
+  const persistedDraft = buildDraftPayload(input, {
+    transactionId: data.id,
+    transactionNumber: data.transaction_number,
+  });
+  const normalizedRecords = buildNormalizedSaleRecords(data.id, persistedDraft);
+
+  const { error: deleteChildRowsError } = await supabase
+    .from("sales_service_lines")
+    .delete()
+    .eq("transaction_id", data.id);
+
+  if (deleteChildRowsError) {
+    throw deleteChildRowsError;
+  }
+
+  if (normalizedRecords.serviceLines.length > 0) {
+    const { error: serviceLinesError } = await supabase
+      .from("sales_service_lines")
+      .insert(normalizedRecords.serviceLines);
+
+    if (serviceLinesError) {
+      throw serviceLinesError;
+    }
+  }
+
+  if (normalizedRecords.materials.length > 0) {
+    const { error: materialsError } = await supabase
+      .from("sales_material_entries")
+      .insert(normalizedRecords.materials);
+
+    if (materialsError) {
+      throw materialsError;
+    }
+  }
+
+  if (normalizedRecords.addOns.length > 0) {
+    const { error: addOnsError } = await supabase
+      .from("sales_add_on_entries")
+      .insert(normalizedRecords.addOns);
+
+    if (addOnsError) {
+      throw addOnsError;
+    }
+  }
+
+  const { error: payloadSyncError } = await supabase
+    .from("sales_transactions")
+    .update({
+      draft_payload: persistedDraft,
+    })
+    .eq("id", data.id);
+
+  if (payloadSyncError) {
+    throw payloadSyncError;
   }
 
   revalidatePath("/dashboard");
