@@ -129,6 +129,20 @@ describe("validateCompletion", () => {
     });
   });
 
+  it("treats draft-shaped sales as invalid for completion", () => {
+    const sale = buildValidSale();
+    sale.serviceLines = [];
+    sale.payment = null;
+
+    expect(validateCompletion(sale)).toEqual({
+      isValid: false,
+      errors: [
+        "At least one service line is required.",
+        "Payment method is required.",
+      ],
+    });
+  });
+
   it("requires cash payments to cover the final total", () => {
     const sale = buildValidSale();
     sale.payment = {
