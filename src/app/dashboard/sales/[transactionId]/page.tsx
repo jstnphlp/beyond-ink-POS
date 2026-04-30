@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { SalesShell } from "@/components/sales/sales-shell";
 import { SalesEditWorkspace } from "@/components/sales/sales-edit-workspace";
-import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { getDraftTransactionById, getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
 
 export default async function DraftTransactionPage({
@@ -10,7 +10,7 @@ export default async function DraftTransactionPage({
 }: {
   params: Promise<{ transactionId: string }>;
 }) {
-  const user = await getAuthorizedUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");

@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 
 import { SalesShell } from "@/components/sales/sales-shell";
 import { SalesWorkspace } from "@/components/sales/sales-workspace";
-import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
 
 export default async function SalesPage() {
-  const user = await getAuthorizedUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");

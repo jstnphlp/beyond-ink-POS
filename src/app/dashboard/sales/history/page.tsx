@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 
 import { SalesShell } from "@/components/sales/sales-shell";
 import { TransactionHistory } from "@/components/sales/transaction-history";
-import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { getTransactionHistory } from "@/lib/sales/queries";
 
 export default async function TransactionHistoryPage() {
-  const user = await getAuthorizedUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
