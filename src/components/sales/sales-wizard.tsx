@@ -117,7 +117,14 @@ export function SalesWizard({
         }
 
         setMessage("Transaction deleted.");
-        router.push("/dashboard/sales");
+        
+        if (mode === "create") {
+          setSale({ ...buildEmptySale(), cashierName: sale.cashierName });
+          setCurrentStep(0);
+        } else {
+          router.push("/dashboard/sales");
+        }
+        
         router.refresh();
       } catch (error) {
         setErrors([
@@ -140,7 +147,14 @@ export function SalesWizard({
         }
 
         setErrors([]);
-        router.push("/dashboard/sales");
+        
+        if (mode === "create") {
+          setSale({ ...buildEmptySale(), cashierName: sale.cashierName });
+          setCurrentStep(0);
+        } else {
+          router.push("/dashboard/sales");
+        }
+        
         router.refresh();
       } catch (error) {
         setErrors([
