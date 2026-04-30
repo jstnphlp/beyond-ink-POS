@@ -9,6 +9,8 @@ const buildValidSale = (): DraftSaleInput => ({
   serviceLines: [
     {
       id: "line-1",
+      categoryId: "cat-1",
+      categoryName: "Standard Printing",
       serviceId: "svc-print",
       serviceName: "Sticker Print",
       materials: [

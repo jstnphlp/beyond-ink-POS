@@ -2,22 +2,24 @@ import type { SaleServiceLineInput } from "@/lib/sales/types";
 
 export function ServicesStep({
   serviceLines,
+  availableCategories,
   availableServices,
   onChange,
 }: {
   serviceLines: SaleServiceLineInput[];
-  availableServices: { id: string; name: string }[];
+  availableCategories: { id: string; name: string }[];
+  availableServices: { id: string; name: string; category_id: string | null }[];
   onChange: (serviceLines: SaleServiceLineInput[]) => void;
 }) {
   function addServiceLine() {
-    const defaultService = availableServices[0];
-
     onChange([
       ...serviceLines,
       {
         id: crypto.randomUUID(),
-        serviceId: defaultService?.id ?? "",
-        serviceName: defaultService?.name ?? "",
+        categoryId: "",
+        categoryName: "",
+        serviceId: "",
+        serviceName: "",
         materials: [],
       },
     ]);
@@ -58,44 +60,85 @@ export function ServicesStep({
         </div>
       ) : null}
 
-      {serviceLines.map((line, index) => (
-        <div key={line.id} className="salesCard">
-          <div className="salesCardHeader">
-            <strong>Service Line {index + 1}</strong>
-            <button
-              className="buttonSecondary"
-              type="button"
-              onClick={() => removeServiceLine(line.id)}
-            >
-              Remove
-            </button>
+      {serviceLines.map((line, index) => {
+        const filteredServices = line.categoryId
+          ? availableServices.filter((s) => s.category_id === line.categoryId)
+          : [];
+
+        return (
+          <div key={line.id} className="salesCard">
+            <div className="salesCardHeader">
+              <strong>Service Line {index + 1}</strong>
+              <button
+                className="buttonSecondary"
+                type="button"
+                onClick={() => removeServiceLine(line.id)}
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="salesFieldGrid">
+              <label className="salesField">
+                <span>General Service</span>
+                <select
+                  value={line.categoryId}
+                  onChange={(event) => {
+                    const category = availableCategories.find(
+                      (cat) => cat.id === event.target.value,
+                    );
+
+                    updateServiceLine(line.id, {
+                      categoryId: event.target.value,
+                      categoryName: category?.name ?? "",
+                      // Reset specific service when category changes
+                      serviceId: "",
+                      serviceName: "",
+                      materials: [],
+                    });
+                  }}
+                >
+                  <option value="">Select a category</option>
+                  {availableCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="salesField">
+                <span>Specific Service</span>
+                <select
+                  value={line.serviceId}
+                  disabled={!line.categoryId}
+                  onChange={(event) => {
+                    const service = filteredServices.find(
+                      (item) => item.id === event.target.value,
+                    );
+
+                    updateServiceLine(line.id, {
+                      serviceId: event.target.value,
+                      serviceName: service?.name ?? "",
+                      // Reset materials when service changes
+                      materials: [],
+                    });
+                  }}
+                >
+                  <option value="">
+                    {line.categoryId ? "Select a service" : "Choose a category first"}
+                  </option>
+                  {filteredServices.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
-
-          <label className="salesField">
-            <span>Service</span>
-            <select
-              value={line.serviceId}
-              onChange={(event) => {
-                const service = availableServices.find(
-                  (item) => item.id === event.target.value,
-                );
-
-                updateServiceLine(line.id, {
-                  serviceId: event.target.value,
-                  serviceName: service?.name ?? "",
-                });
-              }}
-            >
-              <option value="">Select a service</option>
-              {availableServices.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

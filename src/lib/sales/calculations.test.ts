@@ -11,6 +11,8 @@ import type { DraftSaleInput, SaleServiceLineInput } from "./types";
 const serviceLines: SaleServiceLineInput[] = [
   {
     id: "line-1",
+    categoryId: "cat-1",
+    categoryName: "Standard Printing",
     serviceId: "svc-print",
     serviceName: "Sticker Print",
     materials: [

@@ -22,8 +22,8 @@ export function SalesShell({
               <Link className="button" href="/dashboard/sales">
                 New sale
               </Link>
-              <Link className="buttonSecondary" href="/dashboard/sales/drafts">
-                Drafts
+              <Link className="buttonSecondary" href="/dashboard/sales/history">
+                History
               </Link>
               <Link className="buttonSecondary" href="/dashboard">
                 Back to dashboard

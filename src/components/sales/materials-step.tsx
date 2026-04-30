@@ -203,6 +203,15 @@ export function MaterialsStep({
               (material.quantity > inventoryItem.stock_on_hand ||
                 inventoryItem.stock_on_hand <= inventoryItem.low_stock_threshold);
 
+            // Only show materials linked to the selected service
+            const availableMaterials = inventoryItems.filter((item) =>
+              pricingReferences.some(
+                (ref) =>
+                  ref.service_id === line.serviceId &&
+                  ref.inventory_item_id === item.id,
+              ),
+            );
+
             return (
               <div key={material.id} className="salesMaterialCard">
                 <div className="salesCardHeader">
@@ -240,7 +249,7 @@ export function MaterialsStep({
                       }}
                     >
                       <option value="">Select material</option>
-                      {inventoryItems.map((item) => (
+                      {availableMaterials.map((item) => (
                         <option key={item.id} value={item.id}>
                           {item.name}
                         </option>

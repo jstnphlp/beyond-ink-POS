@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { SalesShell } from "@/components/sales/sales-shell";
-import { SalesWizard } from "@/components/sales/sales-wizard";
+import { SalesEditWorkspace } from "@/components/sales/sales-edit-workspace";
 import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
-import { getDraftTransactionById, getSalesSetupData } from "@/lib/sales/queries";
+import { getDraftTransactionById, getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
 
 export default async function DraftTransactionPage({
   params,
@@ -17,9 +17,10 @@ export default async function DraftTransactionPage({
   }
 
   const { transactionId } = await params;
-  const [setupData, initialSale] = await Promise.all([
+  const [setupData, initialSale, drafts] = await Promise.all([
     getSalesSetupData(),
     getDraftTransactionById(transactionId),
+    getDraftTransactions(),
   ]);
 
   if (!initialSale) {
@@ -31,7 +32,11 @@ export default async function DraftTransactionPage({
       title="Resume Draft"
       description="Continue editing a saved draft transaction."
     >
-      <SalesWizard mode="edit" setupData={setupData} initialSale={initialSale} />
+      <SalesEditWorkspace
+        setupData={setupData}
+        initialSale={initialSale}
+        initialDrafts={drafts}
+      />
     </SalesShell>
   );
 }

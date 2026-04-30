@@ -148,6 +148,39 @@ export async function cancelSale(transactionId: string) {
   revalidatePath(`/dashboard/sales/${transactionId}`);
 }
 
+export async function deleteDraft(transactionId: string) {
+  const user = await getAuthorizedUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createServerClient();
+
+  // Only allow deleting drafts
+  const { data: existing } = await supabase
+    .from("sales_transactions")
+    .select("status")
+    .eq("id", transactionId)
+    .single();
+
+  if (!existing || existing.status !== "draft") {
+    throw new Error("Only draft transactions can be deleted.");
+  }
+
+  const { error } = await supabase
+    .from("sales_transactions")
+    .delete()
+    .eq("id", transactionId);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/sales");
+  revalidatePath("/dashboard/sales/drafts");
+}
+
 export async function completeSale(input: DraftSaleInput): Promise<MutationResult> {
   const validation = validateCompletion(input);
 

@@ -5,7 +5,8 @@ import { createServerClient } from "@/lib/supabase/server";
 import type { DraftSaleInput } from "./types";
 
 export type SalesSetupData = {
-  services: { id: string; name: string; is_active: boolean }[];
+  serviceCategories: { id: string; name: string }[];
+  services: { id: string; name: string; is_active: boolean; category_id: string | null }[];
   addOns: { id: string; name: string; is_active: boolean }[];
   inventoryItems: {
     id: string;
@@ -27,14 +28,30 @@ export type DraftTransactionListItem = {
   created_at: string;
 };
 
+export type TransactionListItem = {
+  id: string;
+  transaction_number: number;
+  status: string;
+  cashier_name: string;
+  final_total: number;
+  created_at: string;
+  completed_at: string | null;
+  cancelled_at: string | null;
+};
+
 export const getSalesSetupData = cache(async (): Promise<SalesSetupData> => {
   const supabase = await createServerClient();
 
-  const [servicesResult, addOnsResult, inventoryItemsResult, pricingReferencesResult] =
+  const [categoriesResult, servicesResult, addOnsResult, inventoryItemsResult, pricingReferencesResult] =
     await Promise.all([
       supabase
+        .from("service_categories")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name"),
+      supabase
         .from("services")
-        .select("id, name, is_active")
+        .select("id, name, is_active, category_id")
         .eq("is_active", true)
         .order("name"),
       supabase
@@ -51,12 +68,14 @@ export const getSalesSetupData = cache(async (): Promise<SalesSetupData> => {
         .select("id, service_id, inventory_item_id, suggested_unit_price"),
     ]);
 
+  if (categoriesResult.error) throw categoriesResult.error;
   if (servicesResult.error) throw servicesResult.error;
   if (addOnsResult.error) throw addOnsResult.error;
   if (inventoryItemsResult.error) throw inventoryItemsResult.error;
   if (pricingReferencesResult.error) throw pricingReferencesResult.error;
 
   return {
+    serviceCategories: categoriesResult.data ?? [],
     services: servicesResult.data ?? [],
     addOns: addOnsResult.data ?? [],
     inventoryItems: inventoryItemsResult.data ?? [],
@@ -103,4 +122,17 @@ export async function getDraftTransactionById(
     transactionId: data.id,
     transactionNumber: data.transaction_number ?? undefined,
   };
+}
+
+export async function getTransactionHistory(): Promise<TransactionListItem[]> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("sales_transactions")
+    .select("id, transaction_number, status, cashier_name, final_total, created_at, completed_at, cancelled_at")
+    .in("status", ["completed", "cancelled"])
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []) as TransactionListItem[];
 }

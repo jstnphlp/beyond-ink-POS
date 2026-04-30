@@ -44,17 +44,27 @@ export function SalesWizard({
   mode,
   setupData,
   initialSale,
+  sale: externalSale,
+  onSaleChange,
 }: {
   mode: "create" | "edit";
   setupData: SalesSetupData;
   initialSale?: DraftSaleInput | null;
+  sale?: DraftSaleInput;
+  onSaleChange?: (sale: DraftSaleInput) => void;
 }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [sale, setSale] = useState<DraftSaleInput>(initialSale ?? buildEmptySale());
+
+  // Support both controlled (from SalesWorkspace) and uncontrolled (from [transactionId] page) modes
+  const [internalSale, setInternalSale] = useState<DraftSaleInput>(
+    initialSale ?? buildEmptySale(),
+  );
+  const sale = externalSale ?? internalSale;
+  const setSale = onSaleChange ?? setInternalSale;
   const isLocked = sale.status === "completed";
 
   const subtotal = calculateSubtotal(sale);
@@ -80,11 +90,11 @@ export function SalesWizard({
           return;
         }
 
-        setSale((current) => ({
-          ...current,
+        setSale({
+          ...sale,
           transactionId: result.transactionId,
           transactionNumber: result.transactionNumber ?? undefined,
-        }));
+        });
         setMessage(
           result.transactionNumber
             ? `Draft saved as #${result.transactionNumber}.`
@@ -117,7 +127,7 @@ export function SalesWizard({
 
         await cancelSale(transactionId);
         setMessage("Transaction cancelled.");
-        router.push("/dashboard/sales/drafts");
+        router.push("/dashboard/sales");
         router.refresh();
       } catch (error) {
         setErrors([
@@ -139,12 +149,12 @@ export function SalesWizard({
           return;
         }
 
-        setSale((current) => ({
-          ...current,
+        setSale({
+          ...sale,
           status: "completed",
           transactionId: result.transactionId,
           transactionNumber: result.transactionNumber ?? undefined,
-        }));
+        });
         setErrors([]);
         setMessage(
           result.transactionNumber
@@ -203,6 +213,7 @@ export function SalesWizard({
 
         {currentStep === 0 ? (
           <ServicesStep
+            availableCategories={setupData.serviceCategories}
             availableServices={setupData.services}
             serviceLines={sale.serviceLines}
             onChange={(serviceLines) => updateSale({ ...sale, serviceLines })}

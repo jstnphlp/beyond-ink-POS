@@ -23,7 +23,7 @@ Current source files in `service-details` show sample catalog data such as:
 - Add-ons: `Editing`, `Shipping`
 - Materials: `A4 Bond Paper`, `RC Photopaper A4`, `Laminating Film A4`, `Short bondpaper`, `Long bondpaper`
 
-## Phase 1: Foundation
+## Phase 1: Foundation (DONE)
 
 Goal: establish the core app architecture and secure access.
 
@@ -86,6 +86,7 @@ Goal: give visibility into daily operations and stock status.
 - Low-stock report
 - Purchase history report
 - Sales history with useful date-based filtering
+- Adspent and profit margin per adspent on posts (Facebook, Google, Tiktok)
 
 ## Phase 6: Profitability Dashboard
 

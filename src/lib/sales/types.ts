@@ -28,6 +28,8 @@ export type SaleMaterialInput = {
 
 export type SaleServiceLineInput = {
   id: string;
+  categoryId: string;
+  categoryName: string;
   serviceId: string;
   serviceName: string;
   materials: SaleMaterialInput[];

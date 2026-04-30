@@ -21,9 +21,17 @@ using (
 comment on table public.allowed_users is
 'Application allowlist for Beyond Ink POS Google-authenticated users.';
 
+create table if not exists public.service_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.services (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  category_id uuid references public.service_categories(id) on delete set null,
   is_active boolean not null default true,
   created_at timestamptz not null default timezone('utc', now())
 );
@@ -117,6 +125,7 @@ create table if not exists public.inventory_movements (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.service_categories enable row level security;
 alter table public.services enable row level security;
 alter table public.add_ons enable row level security;
 alter table public.inventory_items enable row level security;
@@ -171,6 +180,14 @@ begin
   );
 end;
 $$;
+
+drop policy if exists "service_categories_all_authenticated" on public.service_categories;
+create policy "service_categories_all_authenticated"
+on public.service_categories
+for all
+to authenticated
+using (true)
+with check (true);
 
 drop policy if exists "services_all_authenticated" on public.services;
 create policy "services_all_authenticated"
