@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SignOutButton } from "@/components/sign-out-button";
@@ -26,6 +27,9 @@ export default async function DashboardPage() {
               setup.
             </p>
             <div className="hero__actions">
+              <Link className="button" href="/dashboard/sales">
+                Open sales
+              </Link>
               <SignOutButton />
             </div>
           </div>
