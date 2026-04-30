@@ -10,14 +10,19 @@ const buildValidSale = (): DraftSaleInput => ({
     {
       id: "line-1",
       serviceId: "svc-print",
+      serviceName: "Sticker Print",
       materials: [
         {
           id: "mat-1",
+          inventoryItemId: "inv-1",
+          materialName: "Glossy Sticker",
           quantity: 2,
           unitPrice: 15,
           addOns: [
             {
-              id: "addon-1",
+              id: "addon-line-1",
+              addOnId: "addon-1",
+              name: "Cutting",
               quantity: 2,
               unitPrice: 5,
             },
@@ -28,12 +33,12 @@ const buildValidSale = (): DraftSaleInput => ({
   ],
   delivery: {
     enabled: false,
-    fee: 0,
+    customerName: "",
+    address: "",
+    dropOffLocation: "",
+    deliveryFee: 0,
   },
-  discount: {
-    type: "fixed",
-    value: 0,
-  },
+  discount: null,
   payment: {
     method: "cash",
     cashReceived: 40,
@@ -68,7 +73,7 @@ describe("validateCompletion", () => {
     });
   });
 
-  it("requires materials on every service line", () => {
+  it("requires materials on every service line and names the line", () => {
     const sale = buildValidSale();
     sale.serviceLines[0] = {
       ...sale.serviceLines[0],
@@ -77,7 +82,7 @@ describe("validateCompletion", () => {
 
     expect(validateCompletion(sale)).toEqual({
       isValid: false,
-      errors: ["Each service line must include at least one material."],
+      errors: ["Service line Sticker Print must include at least one material."],
     });
   });
 
@@ -85,15 +90,18 @@ describe("validateCompletion", () => {
     const sale = buildValidSale();
     sale.delivery = {
       enabled: true,
-      fee: 50,
+      customerName: "",
+      address: "",
+      dropOffLocation: "",
+      deliveryFee: 50,
     };
 
     expect(validateCompletion(sale)).toEqual({
       isValid: false,
       errors: [
-        "Customer name is required when delivery is enabled.",
-        "Address is required when delivery is enabled.",
-        "Drop-off location is required when delivery is enabled.",
+        "Delivery customer name is required.",
+        "Delivery address is required.",
+        "Drop-off location is required.",
       ],
     });
   });
@@ -113,7 +121,7 @@ describe("validateCompletion", () => {
 
   it("requires a payment method", () => {
     const sale = buildValidSale();
-    sale.payment = {};
+    sale.payment = null;
 
     expect(validateCompletion(sale)).toEqual({
       isValid: false,
@@ -130,7 +138,7 @@ describe("validateCompletion", () => {
 
     expect(validateCompletion(sale)).toEqual({
       isValid: false,
-      errors: ["Cash payment must cover the final total."],
+      errors: ["Cash received must cover the final total."],
     });
   });
 
@@ -143,7 +151,7 @@ describe("validateCompletion", () => {
 
     expect(validateCompletion(sale)).toEqual({
       isValid: false,
-      errors: ["GCash payment must cover the final total."],
+      errors: ["GCash amount paid must cover the final total."],
     });
   });
 });

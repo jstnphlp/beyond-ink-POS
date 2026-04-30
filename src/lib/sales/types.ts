@@ -9,49 +9,49 @@ export type SaleDiscountInput = {
   value: number;
 };
 
-export type SaleAddonInput = {
+export type SaleAddOnInput = {
   id: string;
+  addOnId: string;
+  name: string;
   quantity: number;
   unitPrice: number;
-  name?: string;
 };
 
 export type SaleMaterialInput = {
   id: string;
+  inventoryItemId: string;
+  materialName: string;
   quantity: number;
   unitPrice: number;
-  name?: string;
-  addOns?: SaleAddonInput[];
+  addOns: SaleAddOnInput[];
 };
 
-export type ServiceLineInput = {
+export type SaleServiceLineInput = {
   id: string;
   serviceId: string;
+  serviceName: string;
   materials: SaleMaterialInput[];
-  name?: string;
 };
 
-export type DeliveryInput = {
+export type SaleDeliveryInput = {
   enabled: boolean;
-  customerName?: string;
-  address?: string;
-  dropOffLocation?: string;
-  fee?: number;
+  customerName: string;
+  address: string;
+  dropOffLocation: string;
+  deliveryFee: number;
 };
 
-export type PaymentInput = {
-  method?: PaymentMethod;
-  cashReceived?: number;
-  amountPaid?: number;
-};
+export type SalePaymentInput =
+  | { method: "cash"; cashReceived: number }
+  | { method: "gcash"; amountPaid: number };
 
 export type DraftSaleInput = {
-  cashierName?: string;
+  cashierName: string;
   status: TransactionStatus;
-  serviceLines: ServiceLineInput[];
-  discount?: SaleDiscountInput;
-  delivery?: DeliveryInput;
-  payment?: PaymentInput;
+  serviceLines: SaleServiceLineInput[];
+  discount: SaleDiscountInput | null;
+  delivery: SaleDeliveryInput;
+  payment: SalePaymentInput | null;
 };
 
 export type CompletionValidationResult = {

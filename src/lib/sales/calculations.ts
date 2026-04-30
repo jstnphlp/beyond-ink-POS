@@ -1,9 +1,11 @@
-import type { SaleDiscountInput, ServiceLineInput } from "./types";
+import type { DraftSaleInput, SaleDiscountInput } from "./types";
 
-export const calculateSubtotal = (serviceLines: ServiceLineInput[]): number =>
+export const calculateSubtotal = ({
+  serviceLines,
+}: Pick<DraftSaleInput, "serviceLines">): number =>
   serviceLines.reduce((saleTotal, serviceLine) => {
     const lineTotal = serviceLine.materials.reduce((materialTotal, material) => {
-      const addOnTotal = (material.addOns ?? []).reduce(
+      const addOnTotal = material.addOns.reduce(
         (runningAddOnTotal, addOn) => runningAddOnTotal + addOn.quantity * addOn.unitPrice,
         0,
       );
@@ -16,7 +18,7 @@ export const calculateSubtotal = (serviceLines: ServiceLineInput[]): number =>
 
 export const calculateDiscountAmount = (
   subtotal: number,
-  discount?: SaleDiscountInput,
+  discount: SaleDiscountInput | null,
 ): number => {
   if (!discount) {
     return 0;
@@ -35,9 +37,14 @@ export const calculateFinalTotal = ({
   deliveryFee,
 }: {
   subtotal: number;
-  discount?: SaleDiscountInput;
+  discount: SaleDiscountInput | null;
   deliveryFee?: number;
-}): number => Math.max(0, subtotal - calculateDiscountAmount(subtotal, discount) + (deliveryFee ?? 0));
+}): number => subtotal - calculateDiscountAmount(subtotal, discount) + (deliveryFee ?? 0);
 
-export const calculateCashChange = (finalTotal: number, cashReceived?: number): number =>
-  Math.max(0, (cashReceived ?? 0) - finalTotal);
+export const calculateCashChange = ({
+  finalTotal,
+  cashReceived,
+}: {
+  finalTotal: number;
+  cashReceived: number;
+}): number => Math.max(0, cashReceived - finalTotal);

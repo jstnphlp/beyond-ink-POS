@@ -6,20 +6,25 @@ import {
   calculateFinalTotal,
   calculateSubtotal,
 } from "./calculations";
-import type { DraftSaleInput, ServiceLineInput } from "./types";
+import type { DraftSaleInput, SaleServiceLineInput } from "./types";
 
-const serviceLines: ServiceLineInput[] = [
+const serviceLines: SaleServiceLineInput[] = [
   {
     id: "line-1",
     serviceId: "svc-print",
+    serviceName: "Sticker Print",
     materials: [
       {
         id: "mat-1",
+        inventoryItemId: "inv-1",
+        materialName: "Glossy Sticker",
         quantity: 2,
         unitPrice: 15,
         addOns: [
           {
-            id: "addon-1",
+            id: "addon-line-1",
+            addOnId: "addon-1",
+            name: "Cutting",
             quantity: 2,
             unitPrice: 5,
           },
@@ -29,9 +34,27 @@ const serviceLines: ServiceLineInput[] = [
   },
 ];
 
+const buildDraftSaleInput = (): DraftSaleInput => ({
+  cashierName: "Mae",
+  status: "draft",
+  serviceLines,
+  discount: { type: "fixed", value: 5 },
+  delivery: {
+    enabled: true,
+    customerName: "Ana",
+    address: "123 Main",
+    dropOffLocation: "Front desk",
+    deliveryFee: 20,
+  },
+  payment: {
+    method: "cash",
+    cashReceived: 100,
+  },
+});
+
 describe("calculateSubtotal", () => {
-  it("includes material totals and add-ons", () => {
-    expect(calculateSubtotal(serviceLines)).toBe(40);
+  it("includes material totals and add-ons from the draft input shape", () => {
+    expect(calculateSubtotal({ serviceLines })).toBe(40);
   });
 });
 
@@ -52,51 +75,34 @@ describe("calculateFinalTotal", () => {
     ).toBe(215);
   });
 
-  it("does not let the computed total drop below zero", () => {
+  it("allows the computed total to go negative so validation can block it", () => {
     expect(
       calculateFinalTotal({
         subtotal: 50,
         discount: { type: "fixed", value: 75 },
       }),
-    ).toBe(0);
+    ).toBe(-25);
   });
 });
 
 describe("calculateCashChange", () => {
   it("returns change when the cash payment covers the total", () => {
-    expect(calculateCashChange(180, 200)).toBe(20);
+    expect(calculateCashChange({ finalTotal: 180, cashReceived: 200 })).toBe(20);
   });
 
   it("returns zero when the payment is short", () => {
-    expect(calculateCashChange(180, 150)).toBe(0);
+    expect(calculateCashChange({ finalTotal: 180, cashReceived: 150 })).toBe(0);
   });
 });
 
 describe("calculations composition", () => {
   it("supports deriving totals from a draft sale shape", () => {
-    const sale: DraftSaleInput = {
-      cashierName: "Mae",
-      serviceLines,
-      discount: { type: "fixed", value: 5 },
-      delivery: {
-        enabled: true,
-        customerName: "Ana",
-        address: "123 Main",
-        dropOffLocation: "Front desk",
-        fee: 20,
-      },
-      payment: {
-        method: "cash",
-        cashReceived: 100,
-      },
-      status: "draft",
-    };
-
-    const subtotal = calculateSubtotal(sale.serviceLines);
+    const sale = buildDraftSaleInput();
+    const subtotal = calculateSubtotal(sale);
     const total = calculateFinalTotal({
       subtotal,
       discount: sale.discount,
-      deliveryFee: sale.delivery?.fee,
+      deliveryFee: sale.delivery.deliveryFee,
     });
 
     expect(subtotal).toBe(40);

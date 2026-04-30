@@ -18,63 +18,49 @@ export const validateCompletion = (sale: DraftSaleInput): CompletionValidationRe
     errors.push("At least one service line is required.");
   }
 
-  const hasServiceLineWithoutMaterials = sale.serviceLines.some(
-    (serviceLine) => serviceLine.materials.length === 0,
-  );
+  sale.serviceLines.forEach((serviceLine) => {
+    if (serviceLine.materials.length === 0) {
+      errors.push(`Service line ${serviceLine.serviceName} must include at least one material.`);
+    }
+  });
 
-  if (hasServiceLineWithoutMaterials) {
-    errors.push("Each service line must include at least one material.");
-  }
-
-  if (sale.delivery?.enabled) {
+  if (sale.delivery.enabled) {
     if (!hasValue(sale.delivery.customerName)) {
-      errors.push("Customer name is required when delivery is enabled.");
+      errors.push("Delivery customer name is required.");
     }
 
     if (!hasValue(sale.delivery.address)) {
-      errors.push("Address is required when delivery is enabled.");
+      errors.push("Delivery address is required.");
     }
 
     if (!hasValue(sale.delivery.dropOffLocation)) {
-      errors.push("Drop-off location is required when delivery is enabled.");
-    }
-
-    if (sale.delivery.fee === undefined) {
-      errors.push("Delivery fee is required when delivery is enabled.");
+      errors.push("Drop-off location is required.");
     }
   }
 
-  const subtotal = calculateSubtotal(sale.serviceLines);
+  const subtotal = calculateSubtotal(sale);
   const discountAmount = calculateDiscountAmount(subtotal, sale.discount);
 
   if (discountAmount > subtotal) {
     errors.push("Discount cannot reduce the total below zero.");
   }
 
-  if (!sale.payment?.method) {
+  if (!sale.payment) {
     errors.push("Payment method is required.");
   }
 
   const finalTotal = calculateFinalTotal({
     subtotal,
     discount: sale.discount,
-    deliveryFee: sale.delivery?.enabled ? sale.delivery.fee : 0,
+    deliveryFee: sale.delivery.enabled ? sale.delivery.deliveryFee : 0,
   });
 
-  if (
-    errors.length === 0 &&
-    sale.payment?.method === "cash" &&
-    (sale.payment.cashReceived ?? 0) < finalTotal
-  ) {
-    errors.push("Cash payment must cover the final total.");
+  if (errors.length === 0 && sale.payment?.method === "cash" && sale.payment.cashReceived < finalTotal) {
+    errors.push("Cash received must cover the final total.");
   }
 
-  if (
-    errors.length === 0 &&
-    sale.payment?.method === "gcash" &&
-    (sale.payment.amountPaid ?? 0) < finalTotal
-  ) {
-    errors.push("GCash payment must cover the final total.");
+  if (errors.length === 0 && sale.payment?.method === "gcash" && sale.payment.amountPaid < finalTotal) {
+    errors.push("GCash amount paid must cover the final total.");
   }
 
   return {
