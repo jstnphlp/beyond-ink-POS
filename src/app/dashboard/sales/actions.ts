@@ -17,10 +17,12 @@ type MutationResult =
   | { ok: true; transactionId: string; transactionNumber: number | null; errors: [] }
   | { ok: false; transactionId: null; transactionNumber: null; errors: string[] };
 
+type UpsertResult = MutationResult & { supabase?: Awaited<ReturnType<typeof createServerClient>> };
+
 async function upsertTransaction(
   input: DraftSaleInput,
   status: "draft" | "completed",
-): Promise<MutationResult> {
+): Promise<UpsertResult> {
   const user = await getAuthorizedUser();
   if (!user) {
     throw new Error("Unauthorized");
@@ -54,6 +56,7 @@ async function upsertTransaction(
   });
   const normalizedRecords = buildNormalizedSaleRecords(data.id, persistedDraft);
 
+  // Delete existing children first (must complete before inserts)
   const { error: deleteChildRowsError } = await supabase
     .from("sales_service_lines")
     .delete()
@@ -63,6 +66,7 @@ async function upsertTransaction(
     throw deleteChildRowsError;
   }
 
+  // Service lines must be inserted before materials/add-ons (FK dependency)
   if (normalizedRecords.serviceLines.length > 0) {
     const { error: serviceLinesError } = await supabase
       .from("sales_service_lines")
@@ -73,38 +77,40 @@ async function upsertTransaction(
     }
   }
 
-  if (normalizedRecords.materials.length > 0) {
-    const { error: materialsError } = await supabase
-      .from("sales_material_entries")
-      .insert(normalizedRecords.materials);
+  // Materials, add-ons, and payload sync can all run in parallel
+  const parallelOps: Promise<void>[] = [];
 
-    if (materialsError) {
-      throw materialsError;
-    }
+  if (normalizedRecords.materials.length > 0) {
+    parallelOps.push(
+      Promise.resolve(
+        supabase
+          .from("sales_material_entries")
+          .insert(normalizedRecords.materials),
+      ).then(({ error: e }) => { if (e) throw e; }),
+    );
   }
 
   if (normalizedRecords.addOns.length > 0) {
-    const { error: addOnsError } = await supabase
-      .from("sales_add_on_entries")
-      .insert(normalizedRecords.addOns);
-
-    if (addOnsError) {
-      throw addOnsError;
-    }
+    parallelOps.push(
+      Promise.resolve(
+        supabase
+          .from("sales_add_on_entries")
+          .insert(normalizedRecords.addOns),
+      ).then(({ error: e }) => { if (e) throw e; }),
+    );
   }
 
-  const { error: payloadSyncError } = await supabase
-    .from("sales_transactions")
-    .update({
-      draft_payload: persistedDraft,
-    })
-    .eq("id", data.id);
+  parallelOps.push(
+    Promise.resolve(
+      supabase
+        .from("sales_transactions")
+        .update({ draft_payload: persistedDraft })
+        .eq("id", data.id),
+    ).then(({ error: e }) => { if (e) throw e; }),
+  );
 
-  if (payloadSyncError) {
-    throw payloadSyncError;
-  }
+  await Promise.all(parallelOps);
 
-  revalidatePath("/dashboard");
   revalidatePath("/dashboard/sales");
   revalidatePath("/dashboard/sales/drafts");
   if (data?.id) {
@@ -116,11 +122,13 @@ async function upsertTransaction(
     transactionId: data.id,
     transactionNumber: data.transaction_number,
     errors: [],
+    supabase,
   };
 }
 
 export async function saveDraft(input: DraftSaleInput): Promise<MutationResult> {
-  return upsertTransaction(input, "draft");
+  const { supabase: _, ...result } = await upsertTransaction(input, "draft");
+  return result;
 }
 
 export async function cancelSale(transactionId: string) {
@@ -142,7 +150,6 @@ export async function cancelSale(transactionId: string) {
     throw error;
   }
 
-  revalidatePath("/dashboard");
   revalidatePath("/dashboard/sales");
   revalidatePath("/dashboard/sales/drafts");
   revalidatePath(`/dashboard/sales/${transactionId}`);
@@ -176,7 +183,6 @@ export async function deleteDraft(transactionId: string) {
     throw error;
   }
 
-  revalidatePath("/dashboard");
   revalidatePath("/dashboard/sales");
   revalidatePath("/dashboard/sales/drafts");
 }
@@ -199,28 +205,31 @@ export async function completeSale(input: DraftSaleInput): Promise<MutationResul
     return result;
   }
 
-  const user = await getAuthorizedUser();
-  if (!user) {
-    throw new Error("Unauthorized");
+  // Reuse the supabase client from upsertTransaction (no redundant auth + client creation)
+  const supabase = result.supabase!;
+
+  // Run all inventory decrements in parallel instead of sequentially
+  const decrementOps = input.serviceLines.flatMap((serviceLine) =>
+    serviceLine.materials.map((material) =>
+      Promise.resolve(
+        supabase.rpc("decrement_inventory_item_stock", {
+          inventory_item_id_input: material.inventoryItemId,
+          quantity_input: material.quantity,
+          transaction_id_input: result.transactionId,
+        }),
+      ).then(({ error }) => { if (error) throw error; }),
+    ),
+  );
+
+  if (decrementOps.length > 0) {
+    await Promise.all(decrementOps);
   }
 
-  const supabase = await createServerClient();
+  // Revalidate inventory cache since stock levels changed
+  revalidateTag("sales-setup-data", {});
 
-  for (const serviceLine of input.serviceLines) {
-    for (const material of serviceLine.materials) {
-      const { error } = await supabase.rpc("decrement_inventory_item_stock", {
-        inventory_item_id_input: material.inventoryItemId,
-        quantity_input: material.quantity,
-        transaction_id_input: result.transactionId,
-      });
-
-      if (error) {
-        throw error;
-      }
-    }
-  }
-
-  return result;
+  const { supabase: _, ...cleanResult } = result;
+  return cleanResult;
 }
 
 export async function deleteTransaction(transactionId: string) {

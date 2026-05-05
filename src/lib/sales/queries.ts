@@ -3,6 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 
 import { createServerClient } from "@/lib/supabase/server";
 
+import {
+  ADD_ONS,
+  PRICING_REFERENCES,
+  SERVICE_CATEGORIES,
+  SERVICES,
+} from "./static-catalog";
 import type { DraftSaleInput } from "./types";
 
 export type SalesSetupData = {
@@ -52,51 +58,19 @@ function createAnonClient(token?: string) {
   );
 }
 
-const getCachedSalesSetupData = unstable_cache(
-  async (token: string): Promise<SalesSetupData> => {
+const getCachedInventoryItems = unstable_cache(
+  async (token: string) => {
     const supabase = createAnonClient(token);
 
-  const [categoriesResult, servicesResult, addOnsResult, inventoryItemsResult, pricingReferencesResult] =
-    await Promise.all([
-      supabase
-        .from("service_categories")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("services")
-        .select("id, name, is_active, category_id")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("add_ons")
-        .select("id, name, is_active")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("inventory_items")
-        .select("id, name, stock_on_hand, low_stock_threshold")
-        .order("name"),
-      supabase
-        .from("service_material_prices")
-        .select("id, service_id, inventory_item_id, suggested_unit_price"),
-    ]);
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("id, name, stock_on_hand, low_stock_threshold")
+      .order("name");
 
-  if (categoriesResult.error) throw categoriesResult.error;
-  if (servicesResult.error) throw servicesResult.error;
-  if (addOnsResult.error) throw addOnsResult.error;
-  if (inventoryItemsResult.error) throw inventoryItemsResult.error;
-  if (pricingReferencesResult.error) throw pricingReferencesResult.error;
-
-  return {
-    serviceCategories: categoriesResult.data ?? [],
-    services: servicesResult.data ?? [],
-    addOns: addOnsResult.data ?? [],
-    inventoryItems: inventoryItemsResult.data ?? [],
-    pricingReferences: pricingReferencesResult.data ?? [],
-  };
+    if (error) throw error;
+    return data ?? [];
   },
-  ["sales-setup-data"],
+  ["inventory-items"],
   { tags: ["sales-setup-data"], revalidate: 3600 }
 );
 
@@ -106,8 +80,15 @@ export async function getSalesSetupData(): Promise<SalesSetupData> {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // If no token exists, provide empty string; the query will fail RLS if unauthenticated.
-  return getCachedSalesSetupData(session?.access_token ?? "");
+  const inventoryItems = await getCachedInventoryItems(session?.access_token ?? "");
+
+  return {
+    serviceCategories: SERVICE_CATEGORIES,
+    services: SERVICES,
+    addOns: ADD_ONS,
+    inventoryItems,
+    pricingReferences: PRICING_REFERENCES,
+  };
 }
 
 export async function getDraftTransactions(): Promise<DraftTransactionListItem[]> {
@@ -120,12 +101,7 @@ export async function getDraftTransactions(): Promise<DraftTransactionListItem[]
 
   if (error) throw error;
 
-  return (data ?? []).filter(
-    (row): row is DraftTransactionListItem =>
-      typeof row.id === "string" &&
-      typeof row.transaction_number === "number" &&
-      typeof row.created_at === "string",
-  );
+  return (data ?? []) as DraftTransactionListItem[];
 }
 
 export async function getDraftTransactionById(

@@ -23,9 +23,9 @@ export function RefreshSettingsButton() {
       className="buttonSecondary"
       disabled={isPending}
       onClick={handleRefresh}
-      title="Refresh prices and services from the database"
+      title="Refresh inventory stock levels from the database"
     >
-      {isPending ? "Refreshing..." : "Refresh Settings"}
+      {isPending ? "Refreshing..." : "Refresh Inventory"}
     </button>
   );
 }

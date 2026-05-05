@@ -61,7 +61,13 @@ export function buildTransactionPayload(
 }
 
 export function buildNormalizedSaleRecords(transactionId: string, input: DraftSaleInput) {
-  const serviceLines = input.serviceLines.map((serviceLine, index) => ({
+  // Filter out incomplete service lines (no service selected) to avoid
+  // inserting empty strings into UUID columns (PostgreSQL 22P02).
+  const validServiceLines = input.serviceLines.filter(
+    (line) => line.serviceId && line.serviceId.trim() !== "",
+  );
+
+  const serviceLines = validServiceLines.map((serviceLine, index) => ({
     id: serviceLine.id,
     transaction_id: transactionId,
     service_id: serviceLine.serviceId,
@@ -69,27 +75,31 @@ export function buildNormalizedSaleRecords(transactionId: string, input: DraftSa
     sort_order: index,
   }));
 
-  const materials = input.serviceLines.flatMap((serviceLine) =>
-    serviceLine.materials.map((material) => ({
-      id: material.id,
-      service_line_id: serviceLine.id,
-      inventory_item_id: material.inventoryItemId,
-      material_name: material.materialName,
-      quantity: material.quantity,
-      unit_price: material.unitPrice,
-    })),
+  const materials = validServiceLines.flatMap((serviceLine) =>
+    serviceLine.materials
+      .filter((m) => m.inventoryItemId && m.inventoryItemId.trim() !== "")
+      .map((material) => ({
+        id: material.id,
+        service_line_id: serviceLine.id,
+        inventory_item_id: material.inventoryItemId,
+        material_name: material.materialName,
+        quantity: material.quantity,
+        unit_price: material.unitPrice,
+      })),
   );
 
-  const addOns = input.serviceLines.flatMap((serviceLine) =>
+  const addOns = validServiceLines.flatMap((serviceLine) =>
     serviceLine.materials.flatMap((material) =>
-      material.addOns.map((addOn) => ({
-        id: addOn.id,
-        material_entry_id: material.id,
-        add_on_id: addOn.addOnId,
-        add_on_name: addOn.name,
-        quantity: addOn.quantity,
-        unit_price: addOn.unitPrice,
-      })),
+      material.addOns
+        .filter((a) => a.addOnId && a.addOnId.trim() !== "")
+        .map((addOn) => ({
+          id: addOn.id,
+          material_entry_id: material.id,
+          add_on_id: addOn.addOnId,
+          add_on_name: addOn.name,
+          quantity: addOn.quantity,
+          unit_price: addOn.unitPrice,
+        })),
     ),
   );
 

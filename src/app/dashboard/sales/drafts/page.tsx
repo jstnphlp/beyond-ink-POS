@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 
 import { DraftList } from "@/components/sales/draft-list";
 import { SalesShell } from "@/components/sales/sales-shell";
-import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { getDraftTransactions } from "@/lib/sales/queries";
 
 export default async function SalesDraftsPage() {
-  const user = await getAuthorizedUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
