@@ -15,6 +15,8 @@ export const SERVICE_CATEGORIES: { id: string; name: string }[] = [
   { id: "a0000000-0000-0000-0000-000000000003", name: "Sticker Printing" },
   { id: "a0000000-0000-0000-0000-000000000004", name: "Others" },
   { id: "a0000000-0000-0000-0000-000000000005", name: "Advanced Services" },
+  { id: "a0000000-0000-0000-0000-000000000006", name: "Magazine Printing" },
+  { id: "a0000000-0000-0000-0000-000000000007", name: "Book Binding" },
 ];
 
 // ─── Services ────────────────────────────────────────────────────────
@@ -57,6 +59,17 @@ export const SERVICES: {
   { id: "b0000000-0000-0000-0000-000000000033", name: "Photo Editing",    is_active: true, category_id: "a0000000-0000-0000-0000-000000000005" },
   { id: "b0000000-0000-0000-0000-000000000034", name: "Video Editing",    is_active: true, category_id: "a0000000-0000-0000-0000-000000000005" },
   { id: "b0000000-0000-0000-0000-000000000035", name: "Website Services", is_active: true, category_id: "a0000000-0000-0000-0000-000000000005" },
+
+  // Magazine Printing
+  { id: "b0000000-0000-0000-0000-000000000050", name: "Magazine (A4, Colored)",       is_active: true, category_id: "a0000000-0000-0000-0000-000000000006" },
+  { id: "b0000000-0000-0000-0000-000000000051", name: "Magazine (A5, Colored)",       is_active: true, category_id: "a0000000-0000-0000-0000-000000000006" },
+  { id: "b0000000-0000-0000-0000-000000000052", name: "Magazine (A4, Black & White)", is_active: true, category_id: "a0000000-0000-0000-0000-000000000006" },
+
+  // Book Binding
+  { id: "b0000000-0000-0000-0000-000000000060", name: "Spiral/Coil Binding",  is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+  { id: "b0000000-0000-0000-0000-000000000061", name: "Tape Binding",         is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+  { id: "b0000000-0000-0000-0000-000000000062", name: "Saddle-Stitch Binding", is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+  { id: "b0000000-0000-0000-0000-000000000063", name: "Hard-Bound Binding",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
 ];
 
 // ─── Add-ons (none currently) ────────────────────────────────────────
@@ -149,4 +162,26 @@ export const PRICING_REFERENCES: {
 
   // Website Services: ₱0 placeholder
   { id: "p0000000-0000-0000-0000-000000000037", service_id: "b0000000-0000-0000-0000-000000000035", inventory_item_id: "c0000000-0000-0000-0000-000000000005", suggested_unit_price: 0 },
+
+  // Magazine Printing (A4, Colored): Glossy Magazine Paper A4 ₱15/page
+  { id: "p0000000-0000-0000-0000-000000000040", service_id: "b0000000-0000-0000-0000-000000000050", inventory_item_id: "c0000000-0000-0000-0000-000000000040", suggested_unit_price: 15 },
+  // Magazine Printing (A4, Colored): Matte Magazine Paper A4 ₱12/page
+  { id: "p0000000-0000-0000-0000-000000000041", service_id: "b0000000-0000-0000-0000-000000000050", inventory_item_id: "c0000000-0000-0000-0000-000000000041", suggested_unit_price: 12 },
+
+  // Magazine Printing (A5, Colored): Glossy Magazine Paper A5 ₱10/page
+  { id: "p0000000-0000-0000-0000-000000000042", service_id: "b0000000-0000-0000-0000-000000000051", inventory_item_id: "c0000000-0000-0000-0000-000000000042", suggested_unit_price: 10 },
+  // Magazine Printing (A5, Colored): Matte Magazine Paper A5 ₱8/page
+  { id: "p0000000-0000-0000-0000-000000000043", service_id: "b0000000-0000-0000-0000-000000000051", inventory_item_id: "c0000000-0000-0000-0000-000000000043", suggested_unit_price: 8 },
+
+  // Magazine Printing (A4, Black & White): Bond Paper A4 ₱5/page
+  { id: "p0000000-0000-0000-0000-000000000044", service_id: "b0000000-0000-0000-0000-000000000052", inventory_item_id: "c0000000-0000-0000-0000-000000000002", suggested_unit_price: 5 },
+
+  // Spiral/Coil Binding: ₱50 per book
+  { id: "p0000000-0000-0000-0000-000000000050", service_id: "b0000000-0000-0000-0000-000000000060", inventory_item_id: "c0000000-0000-0000-0000-000000000050", suggested_unit_price: 50 },
+  // Tape Binding: ₱40 per book
+  { id: "p0000000-0000-0000-0000-000000000051", service_id: "b0000000-0000-0000-0000-000000000061", inventory_item_id: "c0000000-0000-0000-0000-000000000051", suggested_unit_price: 40 },
+  // Saddle-Stitch Binding: ₱30 per book
+  { id: "p0000000-0000-0000-0000-000000000052", service_id: "b0000000-0000-0000-0000-000000000062", inventory_item_id: "c0000000-0000-0000-0000-000000000052", suggested_unit_price: 30 },
+  // Hard-Bound Binding: ₱250 per book
+  { id: "p0000000-0000-0000-0000-000000000053", service_id: "b0000000-0000-0000-0000-000000000063", inventory_item_id: "c0000000-0000-0000-0000-000000000053", suggested_unit_price: 250 },
 ];

@@ -1,85 +1,10 @@
--- Supabase Seed Script for Service Categories, Services, Inventory Items (Materials), and Prices
--- Based on "print - Sheet1.pdf" and "services (1).pdf"
+-- Supabase Seed Script for Inventory Items (Materials)
+-- Service categories, services, and pricing are now hardcoded in static-catalog.ts.
+-- This script only seeds the inventory_items table (the only catalog table still in Supabase).
 -- Run this in your Supabase SQL Editor.
-
--- Step 0: Add category_id column if it doesn't exist yet
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'services' AND column_name = 'category_id'
-  ) THEN
-    CREATE TABLE IF NOT EXISTS public.service_categories (
-      id uuid primary key default gen_random_uuid(),
-      name text not null,
-      is_active boolean not null default true,
-      created_at timestamptz not null default timezone('utc', now())
-    );
-    ALTER TABLE public.service_categories ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "service_categories_all_authenticated" ON public.service_categories;
-    CREATE POLICY "service_categories_all_authenticated" ON public.service_categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-    ALTER TABLE public.services ADD COLUMN category_id uuid REFERENCES public.service_categories(id) ON DELETE SET NULL;
-  END IF;
-END $$;
 
 DO $$
 DECLARE
-    -- ═══════════════════════════════════════
-    -- Category IDs
-    -- ═══════════════════════════════════════
-    cat_standard_printing UUID := 'a0000000-0000-0000-0000-000000000001';
-    cat_photo_printing    UUID := 'a0000000-0000-0000-0000-000000000002';
-    cat_sticker_printing  UUID := 'a0000000-0000-0000-0000-000000000003';
-    cat_others            UUID := 'a0000000-0000-0000-0000-000000000004';
-    cat_advanced          UUID := 'a0000000-0000-0000-0000-000000000005';
-
-    -- ═══════════════════════════════════════
-    -- Service IDs
-    -- ═══════════════════════════════════════
-    -- Standard Printing (category) sub-services
-    s_std_printing_bw      UUID := 'b0000000-0000-0000-0000-000000000040';
-    s_std_printing_colored UUID := 'b0000000-0000-0000-0000-000000000041';
-    s_photocopy_bw         UUID := 'b0000000-0000-0000-0000-000000000042';
-    s_photocopy_colored    UUID := 'b0000000-0000-0000-0000-000000000043';
-    s_scanning             UUID := 'b0000000-0000-0000-0000-000000000003';
-    s_hot_laminating       UUID := 'b0000000-0000-0000-0000-000000000045';
-    s_cold_laminating      UUID := 'b0000000-0000-0000-0000-000000000046';
-
-    -- Old generic services to deactivate
-    s_old_standard_printing UUID := 'b0000000-0000-0000-0000-000000000001';
-    s_old_photocopy         UUID := 'b0000000-0000-0000-0000-000000000002';
-    s_old_laminating        UUID := 'b0000000-0000-0000-0000-000000000005';
-
-    -- Photo Printing (category) sub-services
-    s_3r_photo  UUID := 'b0000000-0000-0000-0000-000000000010';
-    s_4r_photo  UUID := 'b0000000-0000-0000-0000-000000000011';
-    s_a4_photo  UUID := 'b0000000-0000-0000-0000-000000000012';
-    s_rush_id   UUID := 'b0000000-0000-0000-0000-000000000004';
-
-    -- Sticker Printing (category) sub-services
-    s_custom_stickers UUID := 'b0000000-0000-0000-0000-000000000007';
-    s_sintra_sticker  UUID := 'b0000000-0000-0000-0000-000000000036';
-
-    -- Others (category) sub-services
-    s_certificates   UUID := 'b0000000-0000-0000-0000-000000000020';
-    s_flyers         UUID := 'b0000000-0000-0000-0000-000000000021';
-    s_business_cards  UUID := 'b0000000-0000-0000-0000-000000000022';
-    s_simple_editing UUID := 'b0000000-0000-0000-0000-000000000023';
-
-    -- Advanced Services (category) sub-services
-    s_typing         UUID := 'b0000000-0000-0000-0000-000000000030';
-    s_research       UUID := 'b0000000-0000-0000-0000-000000000031';
-    s_layout_design  UUID := 'b0000000-0000-0000-0000-000000000032';
-    s_photo_editing  UUID := 'b0000000-0000-0000-0000-000000000033';
-    s_video_editing  UUID := 'b0000000-0000-0000-0000-000000000034';
-    s_website        UUID := 'b0000000-0000-0000-0000-000000000035';
-
-    -- Old generic services to deactivate
-    s_old_photo_printing    UUID := 'b0000000-0000-0000-0000-000000000006';
-    s_old_others            UUID := 'b0000000-0000-0000-0000-000000000008';
-    s_old_advanced_services UUID := 'b0000000-0000-0000-0000-000000000009';
-
     -- ═══════════════════════════════════════
     -- Inventory Item (Material) IDs
     -- ═══════════════════════════════════════
@@ -101,62 +26,22 @@ DECLARE
     m_specialty_board UUID := 'c0000000-0000-0000-0000-000000000017';
     m_digital_output UUID := 'c0000000-0000-0000-0000-000000000005';
 
+    -- Magazine Printing materials
+    m_mag_glossy_a4  UUID := 'c0000000-0000-0000-0000-000000000040';
+    m_mag_matte_a4   UUID := 'c0000000-0000-0000-0000-000000000041';
+    m_mag_glossy_a5  UUID := 'c0000000-0000-0000-0000-000000000042';
+    m_mag_matte_a5   UUID := 'c0000000-0000-0000-0000-000000000043';
+
+    -- Book Binding materials
+    m_spiral_coil    UUID := 'c0000000-0000-0000-0000-000000000050';
+    m_tape_bind      UUID := 'c0000000-0000-0000-0000-000000000051';
+    m_saddle_staple  UUID := 'c0000000-0000-0000-0000-000000000052';
+    m_hard_cover     UUID := 'c0000000-0000-0000-0000-000000000053';
+
 BEGIN
 
     -- ═══════════════════════════════════════
-    -- 1. Service Categories
-    -- ═══════════════════════════════════════
-    INSERT INTO public.service_categories (id, name, is_active) VALUES
-        (cat_standard_printing, 'Standard Printing', true),
-        (cat_photo_printing, 'Photo Printing', true),
-        (cat_sticker_printing, 'Sticker Printing', true),
-        (cat_others, 'Others', true),
-        (cat_advanced, 'Advanced Services', true)
-    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, is_active = EXCLUDED.is_active;
-
-    -- ═══════════════════════════════════════
-    -- 2. Services (specific sub-services under each category)
-    -- ═══════════════════════════════════════
-    INSERT INTO public.services (id, name, category_id, is_active) VALUES
-        -- Standard Printing
-        (s_std_printing_bw,      'Standard Printing (Black)',    cat_standard_printing, true),
-        (s_std_printing_colored, 'Standard Printing (Colored)',  cat_standard_printing, true),
-        (s_photocopy_bw,         'Photocopy / Xerox (Black)',    cat_standard_printing, true),
-        (s_photocopy_colored,    'Photocopy / Xerox (Colored)',  cat_standard_printing, true),
-        (s_scanning,             'Scanning',                     cat_standard_printing, true),
-        (s_hot_laminating,       'Hot Laminating',               cat_standard_printing, true),
-        (s_cold_laminating,      'Phototop/Coldtop',             cat_standard_printing, true),
-
-        -- Photo Printing
-        (s_3r_photo,  '3R Photo Print',  cat_photo_printing, true),
-        (s_4r_photo,  '4R Photo Print',  cat_photo_printing, true),
-        (s_a4_photo,  'A4 Photo Print',  cat_photo_printing, true),
-        (s_rush_id,   'Rush ID',         cat_photo_printing, true),
-
-        -- Sticker Printing
-        (s_custom_stickers, 'Custom Stickers/Labels',    cat_sticker_printing, true),
-        (s_sintra_sticker,  'Sticker on Sintra Board',   cat_sticker_printing, true),
-
-        -- Others
-        (s_certificates,   'Certificates & Award',       cat_others, true),
-        (s_flyers,         'Flyers/Tri-Fold Brochures',  cat_others, true),
-        (s_business_cards, 'Business Cards',             cat_others, true),
-        (s_simple_editing, 'Simple Editing',              cat_others, true),
-
-        -- Advanced Services
-        (s_typing,        'Typing',           cat_advanced, true),
-        (s_research,      'Research',         cat_advanced, true),
-        (s_layout_design, 'Layout Design',    cat_advanced, true),
-        (s_photo_editing, 'Photo Editing',    cat_advanced, true),
-        (s_video_editing, 'Video Editing',    cat_advanced, true),
-        (s_website,       'Website Services', cat_advanced, true)
-    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category_id = EXCLUDED.category_id, is_active = EXCLUDED.is_active;
-
-    -- Deactivate old generic services that have been replaced by specific ones
-    UPDATE public.services SET is_active = false WHERE id IN (s_old_photo_printing, s_old_others, s_old_advanced_services, s_old_standard_printing, s_old_photocopy, s_old_laminating);
-
-    -- ═══════════════════════════════════════
-    -- 3. Inventory Items (Materials)
+    -- Inventory Items (Materials)
     -- ═══════════════════════════════════════
     INSERT INTO public.inventory_items (id, name, unit) VALUES
         (m_bond_short,     'Bond Paper - Short (70-80gsm)',             'sheet'),
@@ -175,92 +60,19 @@ BEGIN
         (m_cardstock,      'Cardstock (250-340gsm)',                   'sheet'),
         (m_brochure_paper, 'Glossy/Matte Brochure Paper (100-115gsm)','sheet'),
         (m_specialty_board,'Specialty Board (200gsm)',                  'sheet'),
-        (m_digital_output, 'Digital Output (No Material)',             'service')
+        (m_digital_output, 'Digital Output (No Material)',             'service'),
+
+        -- Magazine Printing materials
+        (m_mag_glossy_a4,  'Glossy Magazine Paper - A4 (130gsm)',     'sheet'),
+        (m_mag_matte_a4,   'Matte Magazine Paper - A4 (130gsm)',      'sheet'),
+        (m_mag_glossy_a5,  'Glossy Magazine Paper - A5 (130gsm)',     'sheet'),
+        (m_mag_matte_a5,   'Matte Magazine Paper - A5 (130gsm)',      'sheet'),
+
+        -- Book Binding materials
+        (m_spiral_coil,    'Spiral/Coil Ring Binder',                 'piece'),
+        (m_tape_bind,      'Tape Binding Strip',                      'piece'),
+        (m_saddle_staple,  'Saddle-Stitch Staple Set',                'set'),
+        (m_hard_cover,     'Hard-Bound Cover Set',                    'set')
     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, unit = EXCLUDED.unit;
-
-    -- ═══════════════════════════════════════
-    -- 4. Service → Material → Price links
-    -- ═══════════════════════════════════════
-    DELETE FROM public.service_material_prices;
-
-    INSERT INTO public.service_material_prices (service_id, inventory_item_id, suggested_unit_price) VALUES
-        -- Standard Printing (Black): Short/A4 ₱4, Long ₱5
-        (s_std_printing_bw, m_bond_short, 4.00),
-        (s_std_printing_bw, m_bond_a4,    4.00),
-        (s_std_printing_bw, m_bond_long,  5.00),
-
-        -- Standard Printing (Colored): Short/A4 ₱7, Long ₱8
-        (s_std_printing_colored, m_bond_short, 7.00),
-        (s_std_printing_colored, m_bond_a4,    7.00),
-        (s_std_printing_colored, m_bond_long,  8.00),
-
-        -- Photocopy / Xerox (Black): Short/A4 ₱2, Long ₱3
-        (s_photocopy_bw, m_bond_short, 2.00),
-        (s_photocopy_bw, m_bond_a4,    2.00),
-        (s_photocopy_bw, m_bond_long,  3.00),
-
-        -- Photocopy / Xerox (Colored): Short/A4 ₱7, Long ₱8
-        (s_photocopy_colored, m_bond_short, 7.00),
-        (s_photocopy_colored, m_bond_a4,    7.00),
-        (s_photocopy_colored, m_bond_long,  8.00),
-
-        -- Scanning: ₱10 per page
-        (s_scanning, m_digital_output, 10.00),
-
-        -- Hot Laminating: ID ₱20, Half ₱35, A4 ₱50
-        (s_hot_laminating, m_lam_id,   20.00),
-        (s_hot_laminating, m_lam_half, 35.00),
-        (s_hot_laminating, m_lam_a4,   50.00),
-
-        -- Phototop / Coldtop: ID ₱20, Half ₱35, A4 ₱50
-        (s_cold_laminating, m_lam_id,   20.00),
-        (s_cold_laminating, m_lam_half, 35.00),
-        (s_cold_laminating, m_lam_a4,   50.00),
-
-        -- Photo Printing
-        (s_3r_photo, m_photo_paper_3r, 8.00),
-        (s_4r_photo, m_photo_paper_4r, 30.00),
-        (s_a4_photo, m_photo_paper_a4, 50.00),
-
-        -- Rush ID: ₱50 (uses 4R photo paper)
-        (s_rush_id, m_photo_paper_4r, 50.00),
-
-        -- Custom Stickers/Labels: ₱45 per A4 sheet
-        (s_custom_stickers, m_vinyl_sticker,  45.00),
-        (s_custom_stickers, m_sticker_matte,  45.00),
-        (s_custom_stickers, m_sticker_glossy, 45.00),
-
-        -- Sticker on Sintra Board: ₱150 A4 size
-        (s_sintra_sticker, m_sintra_board, 150.00),
-
-        -- Certificates & Award: ₱25/pc
-        (s_certificates, m_specialty_board, 25.00),
-
-        -- Flyers/Tri-Fold Brochures: ₱50/pc
-        (s_flyers, m_brochure_paper, 50.00),
-
-        -- Business Cards: ₱50/set (10pcs)
-        (s_business_cards, m_cardstock, 50.00),
-
-        -- Simple Editing: ₱20 (no material)
-        (s_simple_editing, m_digital_output, 20.00),
-
-        -- Typing: ₱40/page
-        (s_typing, m_digital_output, 40.00),
-
-        -- Research: ₱80/page
-        (s_research, m_digital_output, 80.00),
-
-        -- Layout Design: min ₱150
-        (s_layout_design, m_digital_output, 150.00),
-
-        -- Photo Editing: min ₱150
-        (s_photo_editing, m_digital_output, 150.00),
-
-        -- Video Editing: min ₱150
-        (s_video_editing, m_digital_output, 150.00),
-
-        -- Website Services: consultation (₱0 placeholder)
-        (s_website, m_digital_output, 0.00);
 
 END $$;
