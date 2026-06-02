@@ -32,11 +32,12 @@ DECLARE
     m_mag_glossy_a5  UUID := 'c0000000-0000-0000-0000-000000000042';
     m_mag_matte_a5   UUID := 'c0000000-0000-0000-0000-000000000043';
 
-    -- Book Binding materials
-    m_spiral_coil    UUID := 'c0000000-0000-0000-0000-000000000050';
-    m_tape_bind      UUID := 'c0000000-0000-0000-0000-000000000051';
-    m_saddle_staple  UUID := 'c0000000-0000-0000-0000-000000000052';
-    m_hard_cover     UUID := 'c0000000-0000-0000-0000-000000000053';
+-- Book Binding materials
+     m_spiral_coil    UUID := 'c0000000-0000-0000-0000-000000000050';
+     m_tape_bind      UUID := 'c0000000-0000-0000-0000-000000000051';
+     m_saddle_staple  UUID := 'c0000000-0000-0000-0000-000000000052';
+     m_hard_cover     UUID := 'c0000000-0000-0000-0000-000000000053';
+     m_staple_bind    UUID := 'c0000000-0000-0000-0000-000000000054';
 
 BEGIN
 
@@ -68,11 +69,12 @@ BEGIN
         (m_mag_glossy_a5,  'Glossy Magazine Paper - A5 (130gsm)',     'sheet'),
         (m_mag_matte_a5,   'Matte Magazine Paper - A5 (130gsm)',      'sheet'),
 
-        -- Book Binding materials
-        (m_spiral_coil,    'Spiral/Coil Ring Binder',                 'piece'),
-        (m_tape_bind,      'Tape Binding Strip',                      'piece'),
-        (m_saddle_staple,  'Saddle-Stitch Staple Set',                'set'),
-        (m_hard_cover,     'Hard-Bound Cover Set',                    'set')
+-- Book Binding materials
+         (m_spiral_coil,    'Spiral/Coil Ring Binder',                 'piece'),
+         (m_tape_bind,      'Tape Binding Strip',                      'piece'),
+         (m_saddle_staple,  'Saddle-Stitch Staple Set',                'set'),
+         (m_hard_cover,     'Hard-Bound Cover Set',                    'set'),
+         (m_staple_bind,    'Staple Binding Set',                      'set')
     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, unit = EXCLUDED.unit;
 
 END $$;

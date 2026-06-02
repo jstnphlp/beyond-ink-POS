@@ -65,11 +65,12 @@ export const SERVICES: {
   { id: "b0000000-0000-0000-0000-000000000051", name: "Magazine (A5, Colored)",       is_active: true, category_id: "a0000000-0000-0000-0000-000000000006" },
   { id: "b0000000-0000-0000-0000-000000000052", name: "Magazine (A4, Black & White)", is_active: true, category_id: "a0000000-0000-0000-0000-000000000006" },
 
-  // Book Binding
-  { id: "b0000000-0000-0000-0000-000000000060", name: "Spiral/Coil Binding",  is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
-  { id: "b0000000-0000-0000-0000-000000000061", name: "Tape Binding",         is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
-  { id: "b0000000-0000-0000-0000-000000000062", name: "Saddle-Stitch Binding", is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
-  { id: "b0000000-0000-0000-0000-000000000063", name: "Hard-Bound Binding",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+// Book Binding
+   { id: "b0000000-0000-0000-0000-000000000060", name: "Spiral/Coil Binding",  is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+   { id: "b0000000-0000-0000-0000-000000000061", name: "Tape Binding",         is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+   { id: "b0000000-0000-0000-0000-000000000062", name: "Saddle-Stitch Binding", is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+   { id: "b0000000-0000-0000-0000-000000000063", name: "Hard-Bound Binding",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+   { id: "b0000000-0000-0000-0000-000000000064", name: "Staple Binding",       is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
 ];
 
 // ─── Add-ons (none currently) ────────────────────────────────────────
@@ -180,8 +181,10 @@ export const PRICING_REFERENCES: {
   { id: "p0000000-0000-0000-0000-000000000050", service_id: "b0000000-0000-0000-0000-000000000060", inventory_item_id: "c0000000-0000-0000-0000-000000000050", suggested_unit_price: 50 },
   // Tape Binding: ₱40 per book
   { id: "p0000000-0000-0000-0000-000000000051", service_id: "b0000000-0000-0000-0000-000000000061", inventory_item_id: "c0000000-0000-0000-0000-000000000051", suggested_unit_price: 40 },
-  // Saddle-Stitch Binding: ₱30 per book
-  { id: "p0000000-0000-0000-0000-000000000052", service_id: "b0000000-0000-0000-0000-000000000062", inventory_item_id: "c0000000-0000-0000-0000-000000000052", suggested_unit_price: 30 },
-  // Hard-Bound Binding: ₱250 per book
+// Saddle-Stitch Binding: ₱30 per book
+   { id: "p0000000-0000-0000-0000-000000000052", service_id: "b0000000-0000-0000-0000-000000000062", inventory_item_id: "c0000000-0000-0000-0000-000000000052", suggested_unit_price: 30 },
+   // Staple Binding: ₱25 per book
+   { id: "p0000000-0000-0000-0000-000000000054", service_id: "b0000000-0000-0000-0000-000000000064", inventory_item_id: "c0000000-0000-0000-0000-000000000054", suggested_unit_price: 25 },
+   // Hard-Bound Binding: ₱250 per book
   { id: "p0000000-0000-0000-0000-000000000053", service_id: "b0000000-0000-0000-0000-000000000063", inventory_item_id: "c0000000-0000-0000-0000-000000000053", suggested_unit_price: 250 },
 ];
