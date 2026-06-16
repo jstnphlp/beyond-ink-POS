@@ -1,5 +1,6 @@
 import { calculateFinalTotal, calculateSubtotal } from "@/lib/sales/calculations";
 import type { DraftSaleInput } from "@/lib/sales/types";
+import { NumericInput } from "./numeric-input";
 
 export function DeliveryDiscountStep({
   sale,
@@ -99,17 +100,16 @@ export function DeliveryDiscountStep({
 
             <label className="salesField">
               <span>Delivery fee</span>
-              <input
+              <NumericInput
                 min="0"
                 step="0.01"
-                type="number"
                 value={sale.delivery.deliveryFee}
-                onChange={(event) =>
+                onChange={(value) =>
                   onChange({
                     ...sale,
                     delivery: {
                       ...sale.delivery,
-                      deliveryFee: Number(event.target.value) || 0,
+                      deliveryFee: value,
                     },
                   })
                 }
@@ -145,22 +145,21 @@ export function DeliveryDiscountStep({
 
           <label className="salesField">
             <span>Discount value</span>
-            <input
+            <NumericInput
               min="0"
               step="0.01"
-              type="number"
               value={sale.discount?.value ?? 0}
-              onChange={(event) =>
+              onChange={(value) =>
                 onChange({
                   ...sale,
                   discount: sale.discount
                     ? {
                         ...sale.discount,
-                        value: Number(event.target.value) || 0,
+                        value: value,
                       }
                     : {
                         type: "fixed",
-                        value: Number(event.target.value) || 0,
+                        value: value,
                       },
                 })
               }

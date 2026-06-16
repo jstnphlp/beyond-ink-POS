@@ -4,6 +4,7 @@ import type {
   SaleMaterialInput,
 } from "@/lib/sales/types";
 import type { SalesSetupData } from "@/lib/sales/queries";
+import { NumericInput } from "./numeric-input";
 
 export function MaterialsStep({
   sale,
@@ -259,14 +260,13 @@ export function MaterialsStep({
 
                   <label className="salesField">
                     <span>Quantity</span>
-                    <input
+                    <NumericInput
                       min="0"
                       step="1"
-                      type="number"
                       value={material.quantity}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         updateMaterial(line.id, material.id, {
-                          quantity: Number(event.target.value) || 0,
+                          quantity: value,
                         })
                       }
                     />
@@ -274,14 +274,13 @@ export function MaterialsStep({
 
                   <label className="salesField">
                     <span>Suggested / Override Price</span>
-                    <input
+                    <NumericInput
                       min="0"
                       step="0.01"
-                      type="number"
                       value={material.unitPrice}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         updateMaterial(line.id, material.id, {
-                          unitPrice: Number(event.target.value) || 0,
+                          unitPrice: value,
                         })
                       }
                     />
@@ -325,14 +324,13 @@ export function MaterialsStep({
                           <div className="salesFieldGrid">
                             <label className="salesField">
                               <span>Add-on Qty</span>
-                              <input
+                              <NumericInput
                                 min="0"
                                 step="1"
-                                type="number"
                                 value={selectedAddOn.quantity}
-                                onChange={(event) =>
+                                onChange={(value) =>
                                   updateAddOn(line.id, material.id, selectedAddOn.id, {
-                                    quantity: Number(event.target.value) || 0,
+                                    quantity: value,
                                   })
                                 }
                               />
@@ -340,14 +338,13 @@ export function MaterialsStep({
 
                             <label className="salesField">
                               <span>Add-on Price</span>
-                              <input
+                              <NumericInput
                                 min="0"
                                 step="0.01"
-                                type="number"
                                 value={selectedAddOn.unitPrice}
-                                onChange={(event) =>
+                                onChange={(value) =>
                                   updateAddOn(line.id, material.id, selectedAddOn.id, {
-                                    unitPrice: Number(event.target.value) || 0,
+                                    unitPrice: value,
                                   })
                                 }
                               />

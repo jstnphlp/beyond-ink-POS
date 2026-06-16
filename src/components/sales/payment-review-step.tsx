@@ -1,4 +1,5 @@
 import type { DraftSaleInput } from "@/lib/sales/types";
+import { NumericInput } from "./numeric-input";
 
 export function PaymentReviewStep({
   sale,
@@ -71,17 +72,16 @@ export function PaymentReviewStep({
             <>
               <label className="salesField">
                 <span>Cash received</span>
-                <input
+                <NumericInput
                   min="0"
                   step="0.01"
-                  type="number"
                   value={sale.payment.cashReceived}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     onChange({
                       ...sale,
                       payment: {
                         method: "cash",
-                        cashReceived: Number(event.target.value) || 0,
+                        cashReceived: value,
                       },
                     })
                   }
@@ -100,17 +100,16 @@ export function PaymentReviewStep({
           {sale.payment?.method === "gcash" ? (
             <label className="salesField">
               <span>GCash amount paid</span>
-              <input
+              <NumericInput
                 min="0"
                 step="0.01"
-                type="number"
                 value={sale.payment.amountPaid}
-                onChange={(event) =>
+                onChange={(value) =>
                   onChange({
                     ...sale,
                     payment: {
                       method: "gcash",
-                      amountPaid: Number(event.target.value) || 0,
+                      amountPaid: value,
                     },
                   })
                 }
