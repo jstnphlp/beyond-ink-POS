@@ -56,9 +56,9 @@ begin
 end;
 $$;
 
--- pg_cron schedule (run manually after enabling pg_cron extension):
--- SELECT cron.schedule(
---   'auto-logout-staff',
---   '0 13 * * *',
---   $$SELECT public.auto_logout_staff()$$
--- );
+-- pg_cron schedule (run manually after enabling pg_cron extension)
+SELECT cron.schedule(
+ 'auto-logout-staff',
+   '0 13 * * *',
+$$SELECT public.auto_logout_staff()$$
+);

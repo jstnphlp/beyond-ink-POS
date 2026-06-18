@@ -243,6 +243,10 @@ export async function deleteTransaction(transactionId: string) {
     throw new Error("Unauthorized");
   }
 
+  if (user.role !== "owner") {
+    throw new Error("Only owners can delete transactions.");
+  }
+
   const supabase = await createServerClient();
 
   const { error } = await supabase
@@ -276,6 +280,10 @@ export async function updateTransactionDates(
   const user = await getAuthorizedUser();
   if (!user) {
     throw new Error("Unauthorized");
+  }
+
+  if (user.role !== "owner") {
+    throw new Error("Only owners can edit transaction dates.");
   }
 
   const supabase = await createServerClient();

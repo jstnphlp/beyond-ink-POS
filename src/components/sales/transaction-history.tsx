@@ -16,12 +16,24 @@ import type { TransactionListItem } from "@/lib/sales/queries";
 import type { DraftSaleInput } from "@/lib/sales/types";
 import { getDepartmentLabel } from "@/lib/auth/roles";
 
+function getDefaultFrom(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 30);
+  return d.toISOString().split("T")[0];
+}
+
+function getDefaultTo(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
 export function TransactionHistory({
   transactions,
   showDepartment = false,
+  isOwner = false,
 }: {
   transactions: TransactionListItem[];
   showDepartment?: boolean;
+  isOwner?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -32,6 +44,23 @@ export function TransactionHistory({
     null,
   );
 
+  // Filter state
+  const [from, setFrom] = useState(getDefaultFrom);
+  const [to, setTo] = useState(getDefaultTo);
+  const [filterApplied, setFilterApplied] = useState(true);
+
+  // Apply date filter
+  const filteredTransactions = filterApplied
+    ? transactions.filter((txn) => {
+        const txnDate = new Date(txn.completed_at || txn.created_at);
+        const fromDate = new Date(from);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        return txnDate >= fromDate && txnDate <= toDate;
+      })
+    : transactions;
+
   if (transactions.length === 0) {
     return (
       <section className="panel">
@@ -40,7 +69,7 @@ export function TransactionHistory({
     );
   }
 
-  const totalRevenue = transactions.reduce(
+  const totalRevenue = filteredTransactions.reduce(
     (sum, t) => sum + Number(t.final_total),
     0,
   );
@@ -242,6 +271,53 @@ export function TransactionHistory({
 
   return (
     <>
+      {/* Date filter */}
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "16px",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+        }}
+      >
+        <label className="salesField">
+          <span>From</span>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+        </label>
+        <label className="salesField">
+          <span>To</span>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          />
+        </label>
+        <button
+          className="button"
+          type="button"
+          onClick={() => setFilterApplied(true)}
+        >
+          Filter
+        </button>
+        <button
+          className="buttonSecondary"
+          type="button"
+          onClick={() => {
+            setFrom(getDefaultFrom());
+            setTo(getDefaultTo());
+            setFilterApplied(true);
+          }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Revenue summary */}
       <div className="revenueGrid">
         <div className="revenueCard revenueCard--primary">
           <span className="revenueCard__label">Total Revenue</span>
@@ -251,8 +327,8 @@ export function TransactionHistory({
           </span>
         </div>
         <div className="revenueCard">
-          <span className="revenueCard__label">Completed</span>
-          <span className="revenueCard__value">{transactions.length}</span>
+          <span className="revenueCard__label">Transactions</span>
+          <span className="revenueCard__value">{filteredTransactions.length}</span>
         </div>
       </div>
 
@@ -260,7 +336,7 @@ export function TransactionHistory({
         <button
           className="buttonSmall"
           type="button"
-          onClick={() => exportTransactionsToExcel(transactions)}
+          onClick={() => exportTransactionsToExcel(filteredTransactions)}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -286,129 +362,139 @@ export function TransactionHistory({
         </button>
       </div>
 
-      <section className="panel" style={{ padding: 0, overflow: "hidden" }}>
-        <div
-          style={{
-            overflowX: "auto",
-            width: "100%",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          <table className="txnTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                {showDepartment && <th>Department</th>}
-                <th>Cashier</th>
-                <th>Status</th>
-                <th>Total</th>
-                <th>Created</th>
-                <th>Completed</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((txn) => (
-                <tr key={txn.id}>
-                  <td>
-                    <strong>{txn.transaction_number}</strong>
-                  </td>
-                  {showDepartment && (
-                    <td>
-                      <span className="badge">{getDepartmentLabel(txn.department)}</span>
-                    </td>
-                  )}
-                  <td>{txn.cashier_name}</td>
-                  <td>
-                    <span className="badge badge--success">Completed</span>
-                  </td>
-                  <td>₱{Number(txn.final_total).toFixed(2)}</td>
-
-                  {editingId === txn.id ? (
-                    <>
-                      <td>
-                        <input
-                          className="txnDateInput"
-                          type="datetime-local"
-                          value={editCreated}
-                          onChange={(e) => setEditCreated(e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="txnDateInput"
-                          type="datetime-local"
-                          value={editCompleted}
-                          onChange={(e) => setEditCompleted(e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <div className="txnActions">
-                          <button
-                            className="buttonSmall"
-                            disabled={isPending}
-                            type="button"
-                            onClick={() => saveEdit(txn.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="buttonSmall buttonSmall--ghost"
-                            disabled={isPending}
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="muted">
-                        {new Date(txn.created_at).toLocaleString()}
-                      </td>
-                      <td className="muted">
-                        {txn.completed_at
-                          ? new Date(txn.completed_at).toLocaleString()
-                          : "—"}
-                      </td>
-                      <td>
-                        <div className="txnActions">
-                          <button
-                            className="buttonSmall"
-                            disabled={isPending}
-                            type="button"
-                            onClick={() => setSelectedTxn(txn)}
-                          >
-                            View
-                          </button>
-                          <button
-                            className="buttonSmall buttonSmall--ghost"
-                            disabled={isPending}
-                            type="button"
-                            onClick={() => startEdit(txn)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="buttonSmall buttonSmall--danger"
-                            disabled={isPending}
-                            type="button"
-                            onClick={() => handleDelete(txn.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </>
-                  )}
+      {filteredTransactions.length === 0 ? (
+        <section className="panel">
+          <p className="muted">No transactions found for the selected date range.</p>
+        </section>
+      ) : (
+        <section className="panel" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              overflowX: "auto",
+              width: "100%",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <table className="txnTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  {showDepartment && <th>Department</th>}
+                  <th>Cashier</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Created</th>
+                  <th>Completed</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {filteredTransactions.map((txn) => (
+                  <tr key={txn.id}>
+                    <td>
+                      <strong>{txn.transaction_number}</strong>
+                    </td>
+                    {showDepartment && (
+                      <td>
+                        <span className="badge">{getDepartmentLabel(txn.department)}</span>
+                      </td>
+                    )}
+                    <td>{txn.cashier_name}</td>
+                    <td>
+                      <span className="badge badge--success">Completed</span>
+                    </td>
+                    <td>₱{Number(txn.final_total).toFixed(2)}</td>
+
+                    {editingId === txn.id ? (
+                      <>
+                        <td>
+                          <input
+                            className="txnDateInput"
+                            type="datetime-local"
+                            value={editCreated}
+                            onChange={(e) => setEditCreated(e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            className="txnDateInput"
+                            type="datetime-local"
+                            value={editCompleted}
+                            onChange={(e) => setEditCompleted(e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <div className="txnActions">
+                            <button
+                              className="buttonSmall"
+                              disabled={isPending}
+                              type="button"
+                              onClick={() => saveEdit(txn.id)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="buttonSmall buttonSmall--ghost"
+                              disabled={isPending}
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="muted">
+                          {new Date(txn.created_at).toLocaleString()}
+                        </td>
+                        <td className="muted">
+                          {txn.completed_at
+                            ? new Date(txn.completed_at).toLocaleString()
+                            : "—"}
+                        </td>
+                        <td>
+                          <div className="txnActions">
+                            <button
+                              className="buttonSmall"
+                              disabled={isPending}
+                              type="button"
+                              onClick={() => setSelectedTxn(txn)}
+                            >
+                              View
+                            </button>
+                            {isOwner && (
+                              <>
+                                <button
+                                  className="buttonSmall buttonSmall--ghost"
+                                  disabled={isPending}
+                                  type="button"
+                                  onClick={() => startEdit(txn)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="buttonSmall buttonSmall--danger"
+                                  disabled={isPending}
+                                  type="button"
+                                  onClick={() => handleDelete(txn.id)}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {renderReceiptModal()}
     </>

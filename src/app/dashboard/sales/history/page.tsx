@@ -23,7 +23,11 @@ export default async function TransactionHistoryPage() {
       title="Transaction History"
       description="View all completed and cancelled transactions."
     >
-      <TransactionHistory transactions={transactions} showDepartment={isOwner(user.role)} />
+      <TransactionHistory
+        transactions={transactions}
+        showDepartment={isOwner(user.role)}
+        isOwner={isOwner(user.role)}
+      />
     </SalesShell>
   );
 }
