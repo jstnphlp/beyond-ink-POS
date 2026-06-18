@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 import {
   calculateFinalTotal,
   calculateSubtotal,
@@ -16,9 +14,11 @@ import type { DraftSaleInput } from "./types";
  *   1. "Sales Summary"       – one row per transaction with key totals
  *   2. "Detailed Breakdown"  – one row per material/add-on line item
  */
-export function exportTransactionsToExcel(
+export async function exportTransactionsToExcel(
   transactions: TransactionListItem[],
-): void {
+): Promise<void> {
+  const XLSX = await import("xlsx");
+
   const wb = XLSX.utils.book_new();
 
   // ───────────────────────────────── Sheet 1: Sales Summary ─────────────
@@ -80,7 +80,7 @@ export function exportTransactionsToExcel(
   ];
 
   // Format currency columns as numbers
-  formatCurrencyColumns(summarySheet, [5, 7, 8, 9], summaryRows.length);
+  formatCurrencyColumns(XLSX, summarySheet, [5, 7, 8, 9], summaryRows.length);
 
   XLSX.utils.book_append_sheet(wb, summarySheet, "Sales Summary");
 
@@ -142,7 +142,7 @@ export function exportTransactionsToExcel(
     { wch: 14 }, // Line Total
   ];
 
-  formatCurrencyColumns(detailSheet, [7, 8], detailRows.length);
+  formatCurrencyColumns(XLSX, detailSheet, [7, 8], detailRows.length);
 
   XLSX.utils.book_append_sheet(wb, detailSheet, "Detailed Breakdown");
 
@@ -170,7 +170,8 @@ function formatDate(iso: string): string {
  * for every data row (skipping header row).
  */
 function formatCurrencyColumns(
-  sheet: XLSX.WorkSheet,
+  XLSX: typeof import("xlsx"),
+  sheet: ReturnType<typeof XLSX.utils.json_to_sheet>,
   colIndices: number[],
   rowCount: number,
 ): void {

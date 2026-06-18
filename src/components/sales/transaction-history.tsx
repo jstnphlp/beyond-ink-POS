@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import {
   deleteTransaction,
+  getTransactionPayload,
+  getTransactionPayloads,
   updateTransactionDates,
 } from "@/app/dashboard/sales/actions";
 import {
@@ -43,6 +45,7 @@ export function TransactionHistory({
   const [selectedTxn, setSelectedTxn] = useState<TransactionListItem | null>(
     null,
   );
+  const [isLoadingPayload, setIsLoadingPayload] = useState(false);
 
   // Filter state
   const [from, setFrom] = useState(getDefaultFrom);
@@ -336,7 +339,23 @@ export function TransactionHistory({
         <button
           className="buttonSmall"
           type="button"
-          onClick={() => exportTransactionsToExcel(filteredTransactions)}
+          onClick={async () => {
+            setIsLoadingPayload(true);
+            try {
+              const ids = filteredTransactions.map((t) => t.id);
+              const payloads = await getTransactionPayloads(ids);
+              const enriched = filteredTransactions.map((t) => ({
+                ...t,
+                draft_payload: payloads[t.id] ?? null,
+              }));
+              exportTransactionsToExcel(enriched);
+            } catch (err) {
+              console.error("Failed to load data for export:", err);
+            } finally {
+              setIsLoadingPayload(false);
+            }
+          }}
+          disabled={isLoadingPayload}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -458,11 +477,21 @@ export function TransactionHistory({
                           <div className="txnActions">
                             <button
                               className="buttonSmall"
-                              disabled={isPending}
+                              disabled={isPending || isLoadingPayload}
                               type="button"
-                              onClick={() => setSelectedTxn(txn)}
+                              onClick={async () => {
+                                setIsLoadingPayload(true);
+                                try {
+                                  const payload = await getTransactionPayload(txn.id);
+                                  setSelectedTxn({ ...txn, draft_payload: payload });
+                                } catch (err) {
+                                  console.error("Failed to load receipt:", err);
+                                } finally {
+                                  setIsLoadingPayload(false);
+                                }
+                              }}
                             >
-                              View
+                              {isLoadingPayload ? "Loading..." : "View"}
                             </button>
                             {isOwner && (
                               <>

@@ -10,6 +10,10 @@ import {
   buildTransactionPayload,
 } from "@/lib/sales/persistence";
 import { validateCompletion } from "@/lib/sales/validation";
+import {
+  getTransactionPayloadById,
+  getTransactionPayloadsByIds,
+} from "@/lib/sales/queries";
 import { createServerClient } from "@/lib/supabase/server";
 
 import type { DraftSaleInput } from "@/lib/sales/types";
@@ -298,4 +302,20 @@ export async function updateTransactionDates(
   }
 
   revalidatePath("/dashboard/sales/history");
+}
+
+export async function getTransactionPayload(
+  transactionId: string,
+): Promise<DraftSaleInput | null> {
+  const user = await getAuthorizedUser();
+  if (!user) throw new Error("Unauthorized");
+  return getTransactionPayloadById(transactionId);
+}
+
+export async function getTransactionPayloads(
+  transactionIds: string[],
+): Promise<Record<string, DraftSaleInput>> {
+  const user = await getAuthorizedUser();
+  if (!user) throw new Error("Unauthorized");
+  return getTransactionPayloadsByIds(transactionIds);
 }

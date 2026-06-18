@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const ROLE_COOKIE = "user-role";
+const ROLE_COOKIE_MAX_AGE = 300; // 5 minutes
+const STAFF_COOKIE = "staff-on-shift";
+const STAFF_COOKIE_MAX_AGE = 60; // 1 minute
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request,
@@ -57,19 +62,31 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Fetch user role from allowed_users table
-  const { data: allowedUser } = await supabase
-    .from("allowed_users")
-    .select("role")
-    .eq("email", user.email.toLowerCase())
-    .maybeSingle();
+  // --- Role lookup with cookie caching ---
+  let role: string;
+  const cachedRole = request.cookies.get(ROLE_COOKIE)?.value;
 
-  // If user is not in allowed_users, redirect to unauthorized
-  if (!allowedUser) {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  if (cachedRole) {
+    role = cachedRole;
+  } else {
+    const { data: allowedUser } = await supabase
+      .from("allowed_users")
+      .select("role")
+      .eq("email", user.email.toLowerCase())
+      .maybeSingle();
+
+    if (!allowedUser) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+
+    role = allowedUser.role as string;
+    response.cookies.set(ROLE_COOKIE, role, {
+      maxAge: ROLE_COOKIE_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
   }
-
-  const role = allowedUser.role as string;
 
   // Owners can access everything
   if (role === "owner") {
@@ -84,17 +101,30 @@ export async function middleware(request: NextRequest) {
 
   // Physical dept: force to /dashboard when no staff is clocked in
   if (role === "physical_dept" && pathname !== "/dashboard") {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const cachedStaff = request.cookies.get(STAFF_COOKIE)?.value;
+    let hasActiveStaff = cachedStaff === "1";
 
-    const { data: activeSessions } = await supabase
-      .from("staff_sessions")
-      .select("id")
-      .is("time_out", null)
-      .gte("time_in", today.toISOString())
-      .limit(1);
+    if (cachedStaff === undefined) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    if (!activeSessions || activeSessions.length === 0) {
+      const { data: activeSessions } = await supabase
+        .from("staff_sessions")
+        .select("id")
+        .is("time_out", null)
+        .gte("time_in", today.toISOString())
+        .limit(1);
+
+      hasActiveStaff = !!(activeSessions && activeSessions.length > 0);
+      response.cookies.set(STAFF_COOKIE, hasActiveStaff ? "1" : "0", {
+        maxAge: STAFF_COOKIE_MAX_AGE,
+        path: "/",
+        sameSite: "lax",
+        httpOnly: true,
+      });
+    }
+
+    if (!hasActiveStaff) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

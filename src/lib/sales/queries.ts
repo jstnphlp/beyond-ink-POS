@@ -51,7 +51,7 @@ export type TransactionListItem = {
   created_at: string;
   completed_at: string | null;
   cancelled_at: string | null;
-  draft_payload: DraftSaleInput | null;
+  draft_payload?: DraftSaleInput | null;
 };
 
 // Create a generic anonymous client to safely use inside unstable_cache (since it doesn't access cookies)
@@ -155,7 +155,7 @@ export async function getTransactionHistory(department?: Department): Promise<Tr
   const supabase = await createServerClient();
   let query = supabase
     .from("sales_transactions")
-    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at, draft_payload")
+    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .eq("status", "completed")
     .order("transaction_number", { ascending: false });
 
@@ -174,7 +174,7 @@ export async function getAllTransactionsWithDepartment(): Promise<TransactionLis
   const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("sales_transactions")
-    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at, draft_payload")
+    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .in("status", ["completed", "cancelled"])
     .order("transaction_number", { ascending: false });
 
@@ -185,4 +185,41 @@ export async function getAllTransactionsWithDepartment(): Promise<TransactionLis
 
 export async function getTransactionsByDepartment(department: Department): Promise<TransactionListItem[]> {
   return getTransactionHistory(department);
+}
+
+export async function getTransactionPayloadById(
+  transactionId: string,
+): Promise<DraftSaleInput | null> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("sales_transactions")
+    .select("draft_payload")
+    .eq("id", transactionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data?.draft_payload || typeof data.draft_payload !== "object") return null;
+  return data.draft_payload as DraftSaleInput;
+}
+
+export async function getTransactionPayloadsByIds(
+  transactionIds: string[],
+): Promise<Record<string, DraftSaleInput>> {
+  if (transactionIds.length === 0) return {};
+
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("sales_transactions")
+    .select("id, draft_payload")
+    .in("id", transactionIds);
+
+  if (error) throw error;
+
+  const result: Record<string, DraftSaleInput> = {};
+  for (const row of data ?? []) {
+    if (row.draft_payload && typeof row.draft_payload === "object") {
+      result[row.id] = row.draft_payload as DraftSaleInput;
+    }
+  }
+  return result;
 }

@@ -27,9 +27,10 @@ export default async function DashboardPage() {
 
   if (isOwner(authorizedUser.role)) {
     // Owner dashboard: overview + per-department tabs
-    const [allTransactions, allowedUsers] = await Promise.all([
+    const [allTransactions, allowedUsers, ...draftResults] = await Promise.all([
       getAllTransactionsWithDepartment(),
       getAllowedUsers(),
+      ...ALL_DEPARTMENTS.map((dept) => getDraftTransactions(dept)),
     ]);
 
     const departmentTransactions: Record<Department, TransactionListItem[]> = {
@@ -43,9 +44,10 @@ export default async function DashboardPage() {
       dev_dept: [],
     };
 
-    for (const dept of ALL_DEPARTMENTS) {
+    for (let i = 0; i < ALL_DEPARTMENTS.length; i++) {
+      const dept = ALL_DEPARTMENTS[i];
       departmentTransactions[dept] = allTransactions.filter((t) => t.department === dept);
-      departmentDrafts[dept] = await getDraftTransactions(dept);
+      departmentDrafts[dept] = draftResults[i];
     }
 
     return (
