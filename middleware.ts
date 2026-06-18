@@ -77,7 +77,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Department users: redirect /dashboard root to /dashboard/sales
-  if (pathname === "/dashboard") {
+  // (except physical_dept who need the staff shift panel on /dashboard)
+  if (pathname === "/dashboard" && role !== "physical_dept") {
     return NextResponse.redirect(new URL("/dashboard/sales", request.url));
   }
 
