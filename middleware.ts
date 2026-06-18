@@ -82,6 +82,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/sales", request.url));
   }
 
+  // Physical dept: force to /dashboard when no staff is clocked in
+  if (role === "physical_dept" && pathname !== "/dashboard") {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data: activeSessions } = await supabase
+      .from("staff_sessions")
+      .select("id")
+      .is("time_out", null)
+      .gte("time_in", today.toISOString())
+      .limit(1);
+
+    if (!activeSessions || activeSessions.length === 0) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   // Department users: block access to owner-only routes
   if (pathname.startsWith("/dashboard/settings")) {
     return NextResponse.redirect(new URL("/dashboard/sales", request.url));
