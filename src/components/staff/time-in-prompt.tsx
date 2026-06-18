@@ -21,17 +21,25 @@ export function TimeInPrompt() {
     typeof window !== "undefined" && sessionStorage.getItem(STORAGE_KEY) === "true",
   );
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
     if (dismissed || fetchedRef.current) return;
     fetchedRef.current = true;
-    startTransition(async () => {
-      const sessions = await getActiveSessions();
-      setActiveSessions(sessions);
-      setLoaded(true);
-    });
-  }, [dismissed, startTransition]);
+
+    (async () => {
+      try {
+        const sessions = await getActiveSessions();
+        setActiveSessions(sessions);
+      } catch (err) {
+        console.error("[TimeInPrompt] Failed to fetch sessions:", err);
+        setError(err instanceof Error ? err.message : "Failed to load staff sessions.");
+      } finally {
+        setLoaded(true);
+      }
+    })();
+  }, [dismissed]);
 
   const activeNames = new Set(activeSessions.map((s) => s.staff_name));
   const allClockedIn = STAFF_NAMES.every((name) => activeNames.has(name));
@@ -77,6 +85,12 @@ export function TimeInPrompt() {
   return (
     <section className="panel" style={{ marginBottom: "18px" }}>
       <h2 style={{ marginBottom: "8px" }}>Staff Shift</h2>
+
+      {error && (
+        <div style={{ padding: "8px 12px", marginBottom: "12px", background: "#e74c3c20", border: "1px solid #e74c3c40", borderRadius: "6px", color: "#e74c3c", fontSize: "0.875rem" }}>
+          {error}
+        </div>
+      )}
 
       {activeSessions.length > 0 && (
         <div style={{ marginBottom: "12px" }}>
