@@ -4,6 +4,7 @@ import { validateCompletion } from "./validation";
 import type { DraftSaleInput } from "./types";
 
 const buildValidSale = (): DraftSaleInput => ({
+  department: "physical_dept",
   cashierName: "Mae",
   status: "draft",
   serviceLines: [

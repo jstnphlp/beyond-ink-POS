@@ -8,6 +8,11 @@ import {
   PRICING_REFERENCES,
   SERVICE_CATEGORIES,
   SERVICES,
+  getAddOnsByDepartment,
+  getPricingReferencesByDepartment,
+  getServiceCategoriesByDepartment,
+  getServicesByDepartment,
+  type Department,
 } from "./static-catalog";
 import type { DraftSaleInput } from "./types";
 
@@ -33,18 +38,20 @@ export type DraftTransactionListItem = {
   id: string;
   transaction_number: number;
   created_at: string;
+  department: string;
 };
 
 export type TransactionListItem = {
   id: string;
   transaction_number: number;
   status: string;
+  department: string;
   cashier_name: string;
   final_total: number;
   created_at: string;
   completed_at: string | null;
   cancelled_at: string | null;
-  draft_payload: any;
+  draft_payload: DraftSaleInput | null;
 };
 
 // Create a generic anonymous client to safely use inside unstable_cache (since it doesn't access cookies)
@@ -74,13 +81,23 @@ const getCachedInventoryItems = unstable_cache(
   { tags: ["sales-setup-data"], revalidate: 3600 }
 );
 
-export async function getSalesSetupData(): Promise<SalesSetupData> {
+export async function getSalesSetupData(department?: Department): Promise<SalesSetupData> {
   const supabase = await createServerClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   const inventoryItems = await getCachedInventoryItems(session?.access_token ?? "");
+
+  if (department) {
+    return {
+      serviceCategories: getServiceCategoriesByDepartment(department),
+      services: getServicesByDepartment(department),
+      addOns: getAddOnsByDepartment(department),
+      inventoryItems,
+      pricingReferences: getPricingReferencesByDepartment(department),
+    };
+  }
 
   return {
     serviceCategories: SERVICE_CATEGORIES,
@@ -91,13 +108,19 @@ export async function getSalesSetupData(): Promise<SalesSetupData> {
   };
 }
 
-export async function getDraftTransactions(): Promise<DraftTransactionListItem[]> {
+export async function getDraftTransactions(department?: Department): Promise<DraftTransactionListItem[]> {
   const supabase = await createServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("sales_transactions")
-    .select("id, transaction_number, created_at")
+    .select("id, transaction_number, created_at, department")
     .eq("status", "draft")
     .order("created_at", { ascending: false });
+
+  if (department) {
+    query = query.eq("department", department);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 
@@ -110,7 +133,7 @@ export async function getDraftTransactionById(
   const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("sales_transactions")
-    .select("id, transaction_number, draft_payload")
+    .select("id, transaction_number, department, draft_payload")
     .eq("id", transactionId)
     .eq("status", "draft")
     .maybeSingle();
@@ -124,18 +147,42 @@ export async function getDraftTransactionById(
     ...(data.draft_payload as DraftSaleInput),
     transactionId: data.id,
     transactionNumber: data.transaction_number ?? undefined,
+    department: (data.department as Department) ?? "physical_dept",
   };
 }
 
-export async function getTransactionHistory(): Promise<TransactionListItem[]> {
+export async function getTransactionHistory(department?: Department): Promise<TransactionListItem[]> {
+  const supabase = await createServerClient();
+  let query = supabase
+    .from("sales_transactions")
+    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at, draft_payload")
+    .eq("status", "completed")
+    .order("transaction_number", { ascending: false });
+
+  if (department) {
+    query = query.eq("department", department);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data ?? []) as TransactionListItem[];
+}
+
+export async function getAllTransactionsWithDepartment(): Promise<TransactionListItem[]> {
   const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("sales_transactions")
-    .select("id, transaction_number, status, cashier_name, final_total, created_at, completed_at, cancelled_at, draft_payload")
-    .eq("status", "completed")
+    .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at, draft_payload")
+    .in("status", ["completed", "cancelled"])
     .order("transaction_number", { ascending: false });
 
   if (error) throw error;
 
   return (data ?? []) as TransactionListItem[];
+}
+
+export async function getTransactionsByDepartment(department: Department): Promise<TransactionListItem[]> {
+  return getTransactionHistory(department);
 }

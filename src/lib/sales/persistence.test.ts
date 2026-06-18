@@ -11,6 +11,7 @@ function buildSale(): DraftSaleInput {
   return {
     transactionId: "txn-1",
     transactionNumber: 101,
+    department: "physical_dept",
     cashierName: "Mae",
     status: "draft",
     serviceLines: [

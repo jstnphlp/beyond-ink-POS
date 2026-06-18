@@ -2,33 +2,101 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { SignOutButton } from "@/components/sign-out-button";
+import { OwnerDashboard } from "@/components/owner/owner-dashboard";
 import { getDashboardAccessCopy } from "@/lib/auth/access-copy";
-import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
+import { isOwner, getDepartmentLabel } from "@/lib/auth/roles";
+import {
+  getAllTransactionsWithDepartment,
+  getDraftTransactions,
+} from "@/lib/sales/queries";
+import type { Department } from "@/lib/sales/types";
+import { ALL_DEPARTMENTS } from "@/lib/auth/roles";
+
+import type { TransactionListItem, DraftTransactionListItem } from "@/lib/sales/queries";
 
 export default async function DashboardPage() {
-  const authorizedUser = await getAuthorizedUser();
+  const authorizedUser = await getAuthenticatedUser();
   const accessCopy = getDashboardAccessCopy();
 
   if (!authorizedUser) {
     redirect("/login");
   }
 
+  if (isOwner(authorizedUser.role)) {
+    // Owner dashboard: overview + per-department tabs
+    const allTransactions = await getAllTransactionsWithDepartment();
+
+    const departmentTransactions: Record<Department, TransactionListItem[]> = {
+      physical_dept: [],
+      design_dept: [],
+      dev_dept: [],
+    };
+    const departmentDrafts: Record<Department, DraftTransactionListItem[]> = {
+      physical_dept: [],
+      design_dept: [],
+      dev_dept: [],
+    };
+
+    for (const dept of ALL_DEPARTMENTS) {
+      departmentTransactions[dept] = allTransactions.filter((t) => t.department === dept);
+      departmentDrafts[dept] = await getDraftTransactions(dept);
+    }
+
+    return (
+      <main className="shell">
+        <div className="shell__inner">
+          <section className="hero">
+            <div className="hero__card">
+              <p className="eyebrow">Owner Dashboard</p>
+              <h1 className="headline">Beyond Ink POS</h1>
+              <p className="lead">
+                Overview of all departments. Select a department tab below or create a new sale.
+              </p>
+              <div className="hero__actions">
+                <Link className="button" href="/dashboard/sales">
+                  New sale
+                </Link>
+                <Link className="buttonSecondary" href="/dashboard/sales/history">
+                  History
+                </Link>
+                <SignOutButton />
+              </div>
+            </div>
+          </section>
+
+          <OwnerDashboard
+            allTransactions={allTransactions}
+            departmentTransactions={departmentTransactions}
+            departmentDrafts={departmentDrafts}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // Department user dashboard: simple view
+  const dept = authorizedUser.role as Department;
+
   return (
     <main className="shell">
       <div className="shell__inner">
         <section className="hero">
           <div className="hero__card">
-            <p className="eyebrow">Phase 1 Foundation</p>
+            <p className="eyebrow">{getDepartmentLabel(dept)} Department</p>
             <h1 className="headline">Beyond Ink POS</h1>
             <p className="lead">
-              This scaffold wires Next.js, Supabase Auth, a Supabase-backed
-              whitelist, and the first protected dashboard so Phase 2 can focus
-              on catalog, inventory, and POS workflows instead of foundation
-              setup.
+              Welcome back, {authorizedUser.email}. You are signed in to the {getDepartmentLabel(dept)} department.
             </p>
             <div className="hero__actions">
               <Link className="button" href="/dashboard/sales">
-                Open sales
+                New sale
+              </Link>
+              <Link className="buttonSecondary" href="/dashboard/sales/drafts">
+                Drafts
+              </Link>
+              <Link className="buttonSecondary" href="/dashboard/sales/history">
+                History
               </Link>
               <SignOutButton />
             </div>
@@ -42,39 +110,9 @@ export default async function DashboardPage() {
             </div>
             <h2>Access status</h2>
             <p className="muted">{accessCopy}</p>
-          </article>
-
-          <article className="panel">
-            <div className="meta">
-              <span className="badge badge--warning">Next up</span>
-            </div>
-            <h2>Phase 2 targets</h2>
-            <ul className="list">
-              <li>Services and add-ons catalog</li>
-              <li>Inventory items, stock levels, and supplier purchases</li>
-              <li>Stock movement logging and low-stock warnings</li>
-            </ul>
-          </article>
-        </section>
-
-        <section className="grid" style={{ marginTop: "18px" }}>
-          <article className="panel">
-            <h3>What comes next</h3>
-            <ul className="list">
-              <li>Service and add-on setup</li>
-              <li>Inventory items and stock monitoring</li>
-              <li>Supplier purchases and stock movement logs</li>
-              <li>POS sales screen and reports</li>
-            </ul>
-          </article>
-
-          <article className="panel">
-            <h3>Current boundaries</h3>
-            <div className="stack muted">
-              <div>No role system yet. All approved emails see the same UI.</div>
-              <div>No offline mode. Transactions are online-first.</div>
-              <div>Dashboard is a protected placeholder for the next phases.</div>
-            </div>
+            <p className="muted" style={{ marginTop: "8px" }}>
+              Department: <strong>{getDepartmentLabel(dept)}</strong>
+            </p>
           </article>
         </section>
       </div>

@@ -19,7 +19,8 @@ export const validateCompletion = (sale: DraftSaleInput): CompletionValidationRe
   }
 
   sale.serviceLines.forEach((serviceLine) => {
-    if (serviceLine.materials.length === 0) {
+    // Only require materials for physical department (which has inventory integration)
+    if (sale.department === "physical_dept" && serviceLine.materials.length === 0) {
       errors.push(`Service line ${serviceLine.serviceName} must include at least one material.`);
     }
   });

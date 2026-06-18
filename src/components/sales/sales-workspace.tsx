@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 
 import { saveDraft } from "@/app/dashboard/sales/actions";
 import type { DraftTransactionListItem, SalesSetupData } from "@/lib/sales/queries";
-import type { DraftSaleInput } from "@/lib/sales/types";
+import type { DraftSaleInput, Department } from "@/lib/sales/types";
 
 import { DraftSidebar } from "./draft-sidebar";
 import { SalesWizard } from "./sales-wizard";
 
-function buildEmptySale(): DraftSaleInput {
+function buildEmptySale(department: Department): DraftSaleInput {
   return {
+    department,
     cashierName: "",
     status: "draft",
     serviceLines: [],
@@ -36,15 +37,17 @@ function saleHasContent(sale: DraftSaleInput): boolean {
 }
 
 export function SalesWorkspace({
+  department,
   setupData,
   initialDrafts,
 }: {
+  department: Department;
   setupData: SalesSetupData;
   initialDrafts: DraftTransactionListItem[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [sale, setSale] = useState<DraftSaleInput>(buildEmptySale());
+  const [sale, setSale] = useState<DraftSaleInput>(buildEmptySale(department));
 
   async function handleSelectDraft(draftId: string) {
     // If current sale has content, auto-save it as a draft first
@@ -71,6 +74,7 @@ export function SalesWorkspace({
       <div className="salesLayout__main">
         <SalesWizard
           mode="create"
+          department={department}
           setupData={setupData}
           sale={sale}
           onSaleChange={setSale}

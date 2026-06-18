@@ -14,11 +14,14 @@ import {
 import { exportTransactionsToExcel } from "@/lib/sales/export-excel";
 import type { TransactionListItem } from "@/lib/sales/queries";
 import type { DraftSaleInput } from "@/lib/sales/types";
+import { getDepartmentLabel } from "@/lib/auth/roles";
 
 export function TransactionHistory({
   transactions,
+  showDepartment = false,
 }: {
   transactions: TransactionListItem[];
+  showDepartment?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -295,6 +298,7 @@ export function TransactionHistory({
             <thead>
               <tr>
                 <th>#</th>
+                {showDepartment && <th>Department</th>}
                 <th>Cashier</th>
                 <th>Status</th>
                 <th>Total</th>
@@ -309,6 +313,11 @@ export function TransactionHistory({
                   <td>
                     <strong>{txn.transaction_number}</strong>
                   </td>
+                  {showDepartment && (
+                    <td>
+                      <span className="badge">{getDepartmentLabel(txn.department)}</span>
+                    </td>
+                  )}
                   <td>{txn.cashier_name}</td>
                   <td>
                     <span className="badge badge--success">Completed</span>

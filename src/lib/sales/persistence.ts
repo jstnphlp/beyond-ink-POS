@@ -34,6 +34,7 @@ export function buildTransactionPayload(
 
   return {
     status,
+    department: input.department,
     cashier_name: input.cashierName,
     customer_name: input.delivery.enabled ? input.delivery.customerName : null,
     delivery_enabled: input.delivery.enabled,

@@ -9,22 +9,17 @@ import {
   calculateSubtotal,
 } from "@/lib/sales/calculations";
 import type { SalesSetupData } from "@/lib/sales/queries";
-import type { DraftSaleInput } from "@/lib/sales/types";
+import type { DraftSaleInput, Department } from "@/lib/sales/types";
 
 import { DeliveryDiscountStep } from "./delivery-discount-step";
 import { MaterialsStep } from "./materials-step";
 import { PaymentReviewStep } from "./payment-review-step";
 import { ServicesStep } from "./services-step";
+import { getWizardSteps } from "./wizard-config";
 
-const steps = [
-  "Services",
-  "Materials & Add-ons",
-  "Delivery & Discount",
-  "Payment & Review",
-];
-
-function buildEmptySale(): DraftSaleInput {
+function buildEmptySale(department: Department): DraftSaleInput {
   return {
+    department,
     cashierName: "",
     status: "draft",
     serviceLines: [],
@@ -42,12 +37,14 @@ function buildEmptySale(): DraftSaleInput {
 
 export function SalesWizard({
   mode,
+  department,
   setupData,
   initialSale,
   sale: externalSale,
   onSaleChange,
 }: {
   mode: "create" | "edit";
+  department: Department;
   setupData: SalesSetupData;
   initialSale?: DraftSaleInput | null;
   sale?: DraftSaleInput;
@@ -59,9 +56,11 @@ export function SalesWizard({
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const steps = getWizardSteps(department);
+
   // Support both controlled (from SalesWorkspace) and uncontrolled (from [transactionId] page) modes
   const [internalSale, setInternalSale] = useState<DraftSaleInput>(
-    initialSale ?? buildEmptySale(),
+    initialSale ?? buildEmptySale(department),
   );
   const sale = externalSale ?? internalSale;
   const setSale = onSaleChange ?? setInternalSale;
@@ -119,7 +118,7 @@ export function SalesWizard({
         setMessage("Transaction deleted.");
         
         if (mode === "create") {
-          setSale({ ...buildEmptySale(), cashierName: sale.cashierName });
+          setSale({ ...buildEmptySale(department), cashierName: sale.cashierName });
           setCurrentStep(0);
         } else {
           router.push("/dashboard/sales");
@@ -149,7 +148,7 @@ export function SalesWizard({
         setErrors([]);
         
         if (mode === "create") {
-          setSale({ ...buildEmptySale(), cashierName: sale.cashierName });
+          setSale({ ...buildEmptySale(department), cashierName: sale.cashierName });
           setCurrentStep(0);
         } else {
           router.push("/dashboard/sales");
@@ -162,6 +161,53 @@ export function SalesWizard({
         ]);
       }
     });
+  }
+
+  // Map step index to actual step content
+  function renderStep(stepIndex: number) {
+    const step = steps[stepIndex];
+    if (!step) return null;
+
+    switch (step.id) {
+      case "services":
+        return (
+          <ServicesStep
+            availableCategories={setupData.serviceCategories}
+            availableServices={setupData.services}
+            serviceLines={sale.serviceLines}
+            onChange={(serviceLines) => updateSale({ ...sale, serviceLines })}
+          />
+        );
+      case "materials":
+        return (
+          <MaterialsStep
+            addOns={setupData.addOns}
+            inventoryItems={setupData.inventoryItems}
+            pricingReferences={setupData.pricingReferences}
+            sale={sale}
+            onChange={updateSale}
+          />
+        );
+      case "delivery":
+        return <DeliveryDiscountStep sale={sale} onChange={updateSale} />;
+      case "payment":
+        return (
+          <PaymentReviewStep
+            errors={errors}
+            finalTotal={finalTotal}
+            message={message}
+            pending={isPending || isLocked}
+            sale={sale}
+            subtotal={subtotal}
+            onCancel={handleCancel}
+            onChange={updateSale}
+            onComplete={handleComplete}
+            onSaveDraft={handleSaveDraft}
+          />
+        );
+      default:
+        return null;
+    }
   }
 
   return (
@@ -192,7 +238,7 @@ export function SalesWizard({
         <div className="salesStepper">
           {steps.map((step, index) => (
             <button
-              key={step}
+              key={step.id}
               className="salesStepBadge"
               data-active={index === currentStep}
               disabled={isLocked}
@@ -200,48 +246,12 @@ export function SalesWizard({
               onClick={() => setCurrentStep(index)}
             >
               <strong>{index + 1}</strong>
-              <span>{step}</span>
+              <span>{step.label}</span>
             </button>
           ))}
         </div>
 
-        {currentStep === 0 ? (
-          <ServicesStep
-            availableCategories={setupData.serviceCategories}
-            availableServices={setupData.services}
-            serviceLines={sale.serviceLines}
-            onChange={(serviceLines) => updateSale({ ...sale, serviceLines })}
-          />
-        ) : null}
-
-        {currentStep === 1 ? (
-          <MaterialsStep
-            addOns={setupData.addOns}
-            inventoryItems={setupData.inventoryItems}
-            pricingReferences={setupData.pricingReferences}
-            sale={sale}
-            onChange={updateSale}
-          />
-        ) : null}
-
-        {currentStep === 2 ? (
-          <DeliveryDiscountStep sale={sale} onChange={updateSale} />
-        ) : null}
-
-        {currentStep === 3 ? (
-          <PaymentReviewStep
-            errors={errors}
-            finalTotal={finalTotal}
-            message={message}
-            pending={isPending || isLocked}
-            sale={sale}
-            subtotal={subtotal}
-            onCancel={handleCancel}
-            onChange={updateSale}
-            onComplete={handleComplete}
-            onSaveDraft={handleSaveDraft}
-          />
-        ) : null}
+        {renderStep(currentStep)}
 
         <div className="hero__actions">
           <button

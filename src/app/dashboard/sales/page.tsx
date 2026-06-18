@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { SalesShell } from "@/components/sales/sales-shell";
 import { SalesWorkspace } from "@/components/sales/sales-workspace";
 import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
+import { isOwner } from "@/lib/auth/roles";
 import { getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
+import type { Department } from "@/lib/sales/types";
 
 export default async function SalesPage() {
   const user = await getAuthenticatedUser();
@@ -12,12 +14,16 @@ export default async function SalesPage() {
     redirect("/login");
   }
 
+  // Department users use their own department; owners default to physical_dept
+  // (owners can switch via the department selector on the dashboard)
+  const department: Department = isOwner(user.role) ? "physical_dept" : (user.role as Department);
+
   let setupData;
   let drafts;
   try {
     [setupData, drafts] = await Promise.all([
-      getSalesSetupData(),
-      getDraftTransactions(),
+      getSalesSetupData(department),
+      getDraftTransactions(department),
     ]);
   } catch (err: unknown) {
     const message =
@@ -58,7 +64,7 @@ export default async function SalesPage() {
       title="New Sale"
       description="Create a draft or complete a transaction with services, materials, add-ons, delivery, and payment."
     >
-      <SalesWorkspace setupData={setupData} initialDrafts={drafts} />
+      <SalesWorkspace department={department} setupData={setupData} initialDrafts={drafts} />
     </SalesShell>
   );
 }

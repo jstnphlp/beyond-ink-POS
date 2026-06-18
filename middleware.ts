@@ -1,9 +1,92 @@
-import type { NextRequest } from "next/server";
-
-import { updateSession } from "@/lib/supabase/middleware";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  let response = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // Allow public routes
+  const publicRoutes = ["/login", "/unauthorized", "/auth/callback"];
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+
+  if (isPublicRoute) {
+    return response;
+  }
+
+  // Allow static assets and API routes
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.match(/\.(?:svg|png|jpg|jpeg|gif|webp|ico)$/)
+  ) {
+    return response;
+  }
+
+  // If no user, redirect to login
+  if (!user?.email) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Fetch user role from allowed_users table
+  const { data: allowedUser } = await supabase
+    .from("allowed_users")
+    .select("role")
+    .eq("email", user.email.toLowerCase())
+    .maybeSingle();
+
+  // If user is not in allowed_users, redirect to unauthorized
+  if (!allowedUser) {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  }
+
+  const role = allowedUser.role as string;
+
+  // Owners can access everything
+  if (role === "owner") {
+    return response;
+  }
+
+  // Department users: redirect /dashboard root to /dashboard/sales
+  if (pathname === "/dashboard") {
+    return NextResponse.redirect(new URL("/dashboard/sales", request.url));
+  }
+
+  // Department users: block access to owner-only routes
+  if (pathname.startsWith("/dashboard/settings")) {
+    return NextResponse.redirect(new URL("/dashboard/sales", request.url));
+  }
+
+  return response;
 }
 
 export const config = {

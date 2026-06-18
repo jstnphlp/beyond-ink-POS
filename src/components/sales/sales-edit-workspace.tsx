@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { saveDraft } from "@/app/dashboard/sales/actions";
 import type { DraftTransactionListItem, SalesSetupData } from "@/lib/sales/queries";
-import type { DraftSaleInput } from "@/lib/sales/types";
+import type { DraftSaleInput, Department } from "@/lib/sales/types";
 
 import { DraftSidebar } from "./draft-sidebar";
 import { SalesWizard } from "./sales-wizard";
@@ -19,10 +19,12 @@ function saleHasContent(sale: DraftSaleInput): boolean {
 }
 
 export function SalesEditWorkspace({
+  department,
   setupData,
   initialSale,
   initialDrafts,
 }: {
+  department: Department;
   setupData: SalesSetupData;
   initialSale: DraftSaleInput;
   initialDrafts: DraftTransactionListItem[];
@@ -51,6 +53,7 @@ export function SalesEditWorkspace({
       <div className="salesLayout__main">
         <SalesWizard
           mode="edit"
+          department={department}
           setupData={setupData}
           initialSale={initialSale}
         />

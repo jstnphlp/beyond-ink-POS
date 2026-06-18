@@ -5,6 +5,7 @@ import {
   calculateSubtotal,
   calculateDiscountAmount,
 } from "./calculations";
+import { getDepartmentLabel } from "@/lib/auth/roles";
 import type { TransactionListItem } from "./queries";
 import type { DraftSaleInput } from "./types";
 
@@ -46,6 +47,7 @@ export function exportTransactionsToExcel(
 
     return {
       "Txn #": txn.transaction_number,
+      Department: getDepartmentLabel(txn.department),
       Cashier: txn.cashier_name,
       Status: txn.status.charAt(0).toUpperCase() + txn.status.slice(1),
       "Created At": formatDate(txn.created_at),

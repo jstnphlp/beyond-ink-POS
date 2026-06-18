@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getAuthorizedUser } from "@/lib/auth/get-authorized-user";
+import { canAccessDepartment } from "@/lib/auth/roles";
 import {
   buildDraftPayload,
   buildNormalizedSaleRecords,
@@ -26,6 +27,10 @@ async function upsertTransaction(
   const user = await getAuthorizedUser();
   if (!user) {
     throw new Error("Unauthorized");
+  }
+
+  if (!canAccessDepartment(user.role, input.department)) {
+    throw new Error("You do not have access to this department.");
   }
 
   const supabase = await createServerClient();

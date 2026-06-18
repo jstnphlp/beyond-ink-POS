@@ -4,6 +4,7 @@ import { SalesShell } from "@/components/sales/sales-shell";
 import { SalesEditWorkspace } from "@/components/sales/sales-edit-workspace";
 import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { getDraftTransactionById, getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
+import type { Department } from "@/lib/sales/types";
 
 export default async function DraftTransactionPage({
   params,
@@ -17,15 +18,19 @@ export default async function DraftTransactionPage({
   }
 
   const { transactionId } = await params;
-  const [setupData, initialSale, drafts] = await Promise.all([
-    getSalesSetupData(),
-    getDraftTransactionById(transactionId),
-    getDraftTransactions(),
-  ]);
+  const initialSale = await getDraftTransactionById(transactionId);
 
   if (!initialSale) {
     notFound();
   }
+
+  // Use the transaction's department for fetching setup data
+  const department = initialSale.department as Department;
+
+  const [setupData, drafts] = await Promise.all([
+    getSalesSetupData(department),
+    getDraftTransactions(department),
+  ]);
 
   return (
     <SalesShell
@@ -33,6 +38,7 @@ export default async function DraftTransactionPage({
       description="Continue editing a saved draft transaction."
     >
       <SalesEditWorkspace
+        department={department}
         setupData={setupData}
         initialSale={initialSale}
         initialDrafts={drafts}

@@ -5,18 +5,32 @@
  * add_ons, service_material_prices) but are now hardcoded for speed.
  * UUIDs match the original seed-services.sql so historical transactions
  * remain consistent.
+ *
+ * Each category and service is tagged with a department:
+ *   - physical_dept: Physical printing, stickers, magazines, book binding
+ *   - design_dept: Graphic design, video/multimedia, editing services
+ *   - dev_dept: Web development, software solutions
  */
+
+export type Department = 'design_dept' | 'physical_dept' | 'dev_dept';
 
 // ─── Service Categories ─────────────────────────────────────────────
 
-export const SERVICE_CATEGORIES: { id: string; name: string }[] = [
-  { id: "a0000000-0000-0000-0000-000000000001", name: "Standard Printing" },
-  { id: "a0000000-0000-0000-0000-000000000002", name: "Photo Printing" },
-  { id: "a0000000-0000-0000-0000-000000000003", name: "Sticker Printing" },
-  { id: "a0000000-0000-0000-0000-000000000004", name: "Others" },
-  { id: "a0000000-0000-0000-0000-000000000005", name: "Advanced Services" },
-  { id: "a0000000-0000-0000-0000-000000000006", name: "Magazine Printing" },
-  { id: "a0000000-0000-0000-0000-000000000007", name: "Book Binding" },
+export const SERVICE_CATEGORIES: { id: string; name: string; department: Department }[] = [
+  // physical_dept
+  { id: "a0000000-0000-0000-0000-000000000001", name: "Standard Printing", department: "physical_dept" },
+  { id: "a0000000-0000-0000-0000-000000000002", name: "Photo Printing", department: "physical_dept" },
+  { id: "a0000000-0000-0000-0000-000000000003", name: "Sticker Printing", department: "physical_dept" },
+  { id: "a0000000-0000-0000-0000-000000000004", name: "Others", department: "physical_dept" },
+  { id: "a0000000-0000-0000-0000-000000000006", name: "Magazine Printing", department: "physical_dept" },
+  { id: "a0000000-0000-0000-0000-000000000007", name: "Book Binding", department: "physical_dept" },
+  // design_dept
+  { id: "a0000000-0000-0000-0000-000000000005", name: "Advanced Services", department: "design_dept" },
+  { id: "a0000000-0000-0000-0000-000000000010", name: "Graphic Design", department: "design_dept" },
+  { id: "a0000000-0000-0000-0000-000000000011", name: "Video & Multimedia", department: "design_dept" },
+  // dev_dept
+  { id: "a0000000-0000-0000-0000-000000000020", name: "Web Development", department: "dev_dept" },
+  { id: "a0000000-0000-0000-0000-000000000021", name: "Software Solutions", department: "dev_dept" },
 ];
 
 // ─── Services ────────────────────────────────────────────────────────
@@ -71,11 +85,35 @@ export const SERVICES: {
    { id: "b0000000-0000-0000-0000-000000000062", name: "Saddle-Stitch Binding", is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
    { id: "b0000000-0000-0000-0000-000000000063", name: "Hard-Bound Binding",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
    { id: "b0000000-0000-0000-0000-000000000064", name: "Staple Binding",       is_active: true, category_id: "a0000000-0000-0000-0000-000000000007" },
+
+  // Graphic Design (design_dept)
+  { id: "b0000000-0000-0000-0000-000000000070", name: "Logo Design",             is_active: true, category_id: "a0000000-0000-0000-0000-000000000010" },
+  { id: "b0000000-0000-0000-0000-000000000071", name: "Brand Identity Package",  is_active: true, category_id: "a0000000-0000-0000-0000-000000000010" },
+  { id: "b0000000-0000-0000-0000-000000000072", name: "Social Media Graphics",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000010" },
+  { id: "b0000000-0000-0000-0000-000000000073", name: "Poster/Flyer Design",     is_active: true, category_id: "a0000000-0000-0000-0000-000000000010" },
+  { id: "b0000000-0000-0000-0000-000000000074", name: "UI/UX Design",            is_active: true, category_id: "a0000000-0000-0000-0000-000000000010" },
+
+  // Video & Multimedia (design_dept)
+  { id: "b0000000-0000-0000-0000-000000000075", name: "Motion Graphics",    is_active: true, category_id: "a0000000-0000-0000-0000-000000000011" },
+  { id: "b0000000-0000-0000-0000-000000000076", name: "Video Production",   is_active: true, category_id: "a0000000-0000-0000-0000-000000000011" },
+  { id: "b0000000-0000-0000-0000-000000000077", name: "Animation",          is_active: true, category_id: "a0000000-0000-0000-0000-000000000011" },
+
+  // Web Development (dev_dept)
+  { id: "b0000000-0000-0000-0000-000000000080", name: "Business Website",        is_active: true, category_id: "a0000000-0000-0000-0000-000000000020" },
+  { id: "b0000000-0000-0000-0000-000000000081", name: "E-commerce Site",          is_active: true, category_id: "a0000000-0000-0000-0000-000000000020" },
+  { id: "b0000000-0000-0000-0000-000000000082", name: "Landing Page",             is_active: true, category_id: "a0000000-0000-0000-0000-000000000020" },
+  { id: "b0000000-0000-0000-0000-000000000083", name: "Web Application",          is_active: true, category_id: "a0000000-0000-0000-0000-000000000020" },
+
+  // Software Solutions (dev_dept)
+  { id: "b0000000-0000-0000-0000-000000000084", name: "Custom Software",          is_active: true, category_id: "a0000000-0000-0000-0000-000000000021" },
+  { id: "b0000000-0000-0000-0000-000000000085", name: "API Integration",           is_active: true, category_id: "a0000000-0000-0000-0000-000000000021" },
+  { id: "b0000000-0000-0000-0000-000000000086", name: "Database Setup",            is_active: true, category_id: "a0000000-0000-0000-0000-000000000021" },
+  { id: "b0000000-0000-0000-0000-000000000087", name: "Technical Consultation",    is_active: true, category_id: "a0000000-0000-0000-0000-000000000021" },
 ];
 
 // ─── Add-ons (none currently) ────────────────────────────────────────
 
-export const ADD_ONS: { id: string; name: string; is_active: boolean }[] = [];
+export const ADD_ONS: { id: string; name: string; is_active: boolean; department: Department }[] = [];
 
 // ─── Pricing References (Service → Material → Suggested Price) ───────
 
@@ -188,3 +226,25 @@ export const PRICING_REFERENCES: {
    // Hard-Bound Binding: ₱250 per book
   { id: "p0000000-0000-0000-0000-000000000053", service_id: "b0000000-0000-0000-0000-000000000063", inventory_item_id: "c0000000-0000-0000-0000-000000000053", suggested_unit_price: 250 },
 ];
+
+// ─── Department filtering helpers ──────────────────────────────────
+
+export function getServiceCategoriesByDepartment(department: Department) {
+  return SERVICE_CATEGORIES.filter((cat) => cat.department === department);
+}
+
+export function getServicesByDepartment(department: Department) {
+  const categoryIds = SERVICE_CATEGORIES
+    .filter((cat) => cat.department === department)
+    .map((cat) => cat.id);
+  return SERVICES.filter((svc) => svc.category_id && categoryIds.includes(svc.category_id));
+}
+
+export function getAddOnsByDepartment(department: Department) {
+  return ADD_ONS.filter((ao) => ao.department === department);
+}
+
+export function getPricingReferencesByDepartment(department: Department) {
+  const serviceIds = new Set(getServicesByDepartment(department).map((s) => s.id));
+  return PRICING_REFERENCES.filter((pr) => serviceIds.has(pr.service_id));
+}
