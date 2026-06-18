@@ -11,8 +11,9 @@ import { OverviewTab } from "./overview-tab";
 import { DepartmentTab } from "./department-tab";
 import { DepartmentSelector } from "./department-selector";
 import { UserManagement } from "./user-management";
+import { AttendanceTab } from "./attendance-tab";
 
-type TabId = "overview" | Department | "users";
+type TabId = "overview" | Department | "users" | "staff";
 
 export function OwnerDashboard({
   allTransactions,
@@ -34,6 +35,7 @@ export function OwnerDashboard({
       label: getDepartmentLabel(dept),
     })),
     { id: "users", label: "Users" },
+    { id: "staff", label: "Staff" },
   ];
 
   return (
@@ -69,6 +71,10 @@ export function OwnerDashboard({
 
       {activeTab === "users" && (
         <UserManagement initialUsers={allowedUsers} />
+      )}
+
+      {activeTab === "staff" && (
+        <AttendanceTab />
       )}
     </>
   );

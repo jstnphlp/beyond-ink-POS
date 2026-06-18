@@ -7,16 +7,27 @@ export const CASHIER_NAMES = ["Buknoy", "Mark", "Paul", "Philip"] as const;
 export function CashierSelect({
   value,
   onChange,
+  preSelected,
 }: {
   value: string;
   onChange: (value: string) => void;
+  preSelected?: string[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
 
   const selected = value
     ? value.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
+
+  // Auto-fill from preSelected on mount if value is empty
+  useEffect(() => {
+    if (!initialized.current && preSelected && preSelected.length > 0 && !value) {
+      initialized.current = true;
+      onChange(preSelected.join(", "));
+    }
+  }, [preSelected, value, onChange]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

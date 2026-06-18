@@ -43,6 +43,7 @@ export function SalesWizard({
   initialSale,
   sale: externalSale,
   onSaleChange,
+  activeStaff,
 }: {
   mode: "create" | "edit";
   department: Department;
@@ -50,6 +51,7 @@ export function SalesWizard({
   initialSale?: DraftSaleInput | null;
   sale?: DraftSaleInput;
   onSaleChange?: (sale: DraftSaleInput) => void;
+  activeStaff?: string[];
 }) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
@@ -224,6 +226,7 @@ export function SalesWizard({
               <CashierSelect
                 value={sale.cashierName}
                 onChange={(cashierName) => updateSale({ ...sale, cashierName })}
+                preSelected={activeStaff}
               />
             ) : (
               <input

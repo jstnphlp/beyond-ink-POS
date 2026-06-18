@@ -145,6 +145,15 @@ create table if not exists public.inventory_movements (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.staff_sessions (
+  id uuid primary key default gen_random_uuid(),
+  staff_name text not null,
+  time_in timestamptz not null default timezone('utc', now()),
+  time_out timestamptz,
+  auto_logged_out boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 alter table public.service_categories enable row level security;
 alter table public.services enable row level security;
 alter table public.add_ons enable row level security;
@@ -155,6 +164,7 @@ alter table public.sales_service_lines enable row level security;
 alter table public.sales_material_entries enable row level security;
 alter table public.sales_add_on_entries enable row level security;
 alter table public.inventory_movements enable row level security;
+alter table public.staff_sessions enable row level security;
 
 -- ─── Helper functions ──────────────────────────────────────────────
 
@@ -461,3 +471,53 @@ using (public.is_owner() OR public.get_user_role() = 'physical_dept');
 create policy "inventory_movements_insert"
 on public.inventory_movements for insert to authenticated
 with check (public.is_owner() OR public.get_user_role() = 'physical_dept');
+
+-- staff_sessions: owners full access, physical_dept can insert/read/update own
+drop policy if exists "staff_sessions_select_owner" on public.staff_sessions;
+create policy "staff_sessions_select_owner"
+on public.staff_sessions for select to authenticated
+using (public.is_owner());
+
+drop policy if exists "staff_sessions_insert_owner" on public.staff_sessions;
+create policy "staff_sessions_insert_owner"
+on public.staff_sessions for insert to authenticated
+with check (public.is_owner());
+
+drop policy if exists "staff_sessions_update_owner" on public.staff_sessions;
+create policy "staff_sessions_update_owner"
+on public.staff_sessions for update to authenticated
+using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists "staff_sessions_delete_owner" on public.staff_sessions;
+create policy "staff_sessions_delete_owner"
+on public.staff_sessions for delete to authenticated
+using (public.is_owner());
+
+drop policy if exists "staff_sessions_select_physical" on public.staff_sessions;
+create policy "staff_sessions_select_physical"
+on public.staff_sessions for select to authenticated
+using (public.get_user_role() = 'physical_dept');
+
+drop policy if exists "staff_sessions_insert_physical" on public.staff_sessions;
+create policy "staff_sessions_insert_physical"
+on public.staff_sessions for insert to authenticated
+with check (public.get_user_role() = 'physical_dept');
+
+drop policy if exists "staff_sessions_update_physical" on public.staff_sessions;
+create policy "staff_sessions_update_physical"
+on public.staff_sessions for update to authenticated
+using (public.get_user_role() = 'physical_dept')
+with check (public.get_user_role() = 'physical_dept');
+
+-- Auto-logout function: closes all open sessions at 9PM PHT
+create or replace function public.auto_logout_staff()
+returns void
+language plpgsql
+as $$
+begin
+  update public.staff_sessions
+  set time_out = 'today 21:00:00+08'::timestamptz,
+      auto_logged_out = true
+  where time_out is null;
+end;
+$$;

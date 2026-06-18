@@ -5,6 +5,7 @@ import { SalesWorkspace } from "@/components/sales/sales-workspace";
 import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { isOwner } from "@/lib/auth/roles";
 import { getDraftTransactions, getSalesSetupData } from "@/lib/sales/queries";
+import { getActiveSessions } from "@/app/dashboard/staff-sessions/actions";
 import type { Department } from "@/lib/sales/types";
 
 export default async function SalesPage() {
@@ -20,11 +21,17 @@ export default async function SalesPage() {
 
   let setupData;
   let drafts;
+  let activeStaff: string[] = [];
   try {
     [setupData, drafts] = await Promise.all([
       getSalesSetupData(department),
       getDraftTransactions(department),
     ]);
+
+    if (department === "physical_dept") {
+      const sessions = await getActiveSessions();
+      activeStaff = sessions.map((s) => s.staff_name);
+    }
   } catch (err: unknown) {
     const message =
       err && typeof err === "object" && "message" in err
@@ -64,7 +71,7 @@ export default async function SalesPage() {
       title="New Sale"
       description="Create a draft or complete a transaction with services, materials, add-ons, delivery, and payment."
     >
-      <SalesWorkspace department={department} setupData={setupData} initialDrafts={drafts} />
+      <SalesWorkspace department={department} setupData={setupData} initialDrafts={drafts} activeStaff={activeStaff} />
     </SalesShell>
   );
 }

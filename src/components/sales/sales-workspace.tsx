@@ -40,10 +40,12 @@ export function SalesWorkspace({
   department,
   setupData,
   initialDrafts,
+  activeStaff,
 }: {
   department: Department;
   setupData: SalesSetupData;
   initialDrafts: DraftTransactionListItem[];
+  activeStaff?: string[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -78,6 +80,7 @@ export function SalesWorkspace({
           setupData={setupData}
           sale={sale}
           onSaleChange={setSale}
+          activeStaff={activeStaff}
         />
       </div>
       <DraftSidebar
