@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { SignOutButton } from "@/components/sign-out-button";
 import { OwnerDashboard } from "@/components/owner/owner-dashboard";
-import { TimeInPrompt } from "@/components/staff/time-in-prompt";
+import { StaffShiftPanel } from "@/components/staff/time-in-prompt";
 import { getDashboardAccessCopy } from "@/lib/auth/access-copy";
 import { getAuthenticatedUser } from "@/lib/auth/get-authorized-user";
 import { isOwner, getDepartmentLabel } from "@/lib/auth/roles";
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {dept === "physical_dept" && <TimeInPrompt />}
+        {dept === "physical_dept" && <StaffShiftPanel />}
 
         <section className="grid">
           <article className="panel">

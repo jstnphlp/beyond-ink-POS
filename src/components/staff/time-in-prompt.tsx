@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 
 import {
   clockIn,
@@ -11,159 +11,169 @@ import {
 
 const STAFF_NAMES = ["Buknoy", "Mark"] as const;
 
-const STORAGE_KEY = "staff-session-dismissed";
-
-export function TimeInPrompt() {
+export function StaffShiftPanel() {
   const [activeSessions, setActiveSessions] = useState<StaffSession[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [dismissed, setDismissed] = useState(() =>
-    typeof window !== "undefined" && sessionStorage.getItem(STORAGE_KEY) === "true",
-  );
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
 
-  useEffect(() => {
-    if (dismissed || fetchedRef.current) return;
-    fetchedRef.current = true;
+  const fetchSessions = useCallback(async () => {
+    try {
+      const sessions = await getActiveSessions();
+      setActiveSessions(sessions);
+      setError(null);
+    } catch (err) {
+      console.error("[StaffShiftPanel] Failed to fetch sessions:", err);
+      setError(err instanceof Error ? err.message : "Failed to load staff sessions.");
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
 
-    (async () => {
-      try {
-        const sessions = await getActiveSessions();
-        setActiveSessions(sessions);
-      } catch (err) {
-        console.error("[TimeInPrompt] Failed to fetch sessions:", err);
-        setError(err instanceof Error ? err.message : "Failed to load staff sessions.");
-      } finally {
-        setLoaded(true);
-      }
-    })();
-  }, [dismissed]);
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchSessions();
+  }, [fetchSessions]);
 
   const activeNames = new Set(activeSessions.map((s) => s.staff_name));
-  const allClockedIn = STAFF_NAMES.every((name) => activeNames.has(name));
-  const hasPartial = activeSessions.length > 0 && !allClockedIn;
 
-  if (!loaded || dismissed || allClockedIn) return null;
+  function handleClockIn(name: string) {
+    startTransition(async () => {
+      try {
+        await clockIn([name]);
+        await fetchSessions();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to clock in.");
+      }
+    });
+  }
 
-  function toggle(name: string) {
-    setSelected((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+  function handleClockOut(name: string) {
+    startTransition(async () => {
+      try {
+        await clockOut([name]);
+        await fetchSessions();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to clock out.");
+      }
+    });
+  }
+
+  if (!loaded) {
+    return (
+      <section className="panel" style={{ marginBottom: "18px" }}>
+        <h2 style={{ marginBottom: "8px" }}>Staff Shift</h2>
+        <p className="muted">Loading...</p>
+      </section>
     );
   }
 
-  function handleStartShift() {
-    if (selected.length === 0) return;
-    startTransition(async () => {
-      await clockIn(selected);
-      const updated = await getActiveSessions();
-      setActiveSessions(updated);
-      setSelected([]);
-      if (updated.length === STAFF_NAMES.length) {
-        sessionStorage.setItem(STORAGE_KEY, "true");
-        setDismissed(true);
-      }
-    });
-  }
-
-  function handleEndShift(name: string) {
-    startTransition(async () => {
-      await clockOut([name]);
-      const updated = await getActiveSessions();
-      setActiveSessions(updated);
-    });
-  }
-
-  function handleDismiss() {
-    sessionStorage.setItem(STORAGE_KEY, "true");
-    setDismissed(true);
-  }
-
-  const notClockedIn = STAFF_NAMES.filter((name) => !activeNames.has(name));
-
   return (
     <section className="panel" style={{ marginBottom: "18px" }}>
-      <h2 style={{ marginBottom: "8px" }}>Staff Shift</h2>
+      <h2 style={{ marginBottom: "12px" }}>Staff Shift</h2>
 
       {error && (
-        <div style={{ padding: "8px 12px", marginBottom: "12px", background: "#e74c3c20", border: "1px solid #e74c3c40", borderRadius: "6px", color: "#e74c3c", fontSize: "0.875rem" }}>
+        <div
+          style={{
+            padding: "8px 12px",
+            marginBottom: "12px",
+            background: "#e74c3c20",
+            border: "1px solid #e74c3c40",
+            borderRadius: "6px",
+            color: "#e74c3c",
+            fontSize: "0.875rem",
+          }}
+        >
           {error}
         </div>
       )}
 
-      {activeSessions.length > 0 && (
-        <div style={{ marginBottom: "12px" }}>
-          <p className="muted" style={{ marginBottom: "8px" }}>Currently on shift:</p>
-          {activeSessions.map((session) => (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        {STAFF_NAMES.map((name) => {
+          const isActive = activeNames.has(name);
+          const session = activeSessions.find((s) => s.staff_name === name);
+          const timeIn = session
+            ? new Date(session.time_in).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+
+          return (
             <div
-              key={session.id}
+              key={name}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "6px 0",
-                borderBottom: "1px solid var(--border, #e5e7eb)",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                border: "1px solid var(--border, #e5e7eb)",
+                background: isActive ? "#22c55e10" : "transparent",
               }}
             >
-              <span>
-                <strong>{session.staff_name}</strong>
-                <span className="muted" style={{ marginLeft: "8px", fontSize: "0.8rem" }}>
-                  since {new Date(session.time_in).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              </span>
-              <button
-                className="buttonSmall buttonSmall--danger"
-                type="button"
-                disabled={isPending}
-                onClick={() => handleEndShift(session.staff_name)}
-              >
-                End Shift
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: isActive ? "#22c55e" : "#9ca3af",
+                  }}
+                />
+                <div>
+                  <strong>{name}</strong>
+                  {isActive && timeIn && (
+                    <span
+                      className="muted"
+                      style={{ marginLeft: "8px", fontSize: "0.8rem" }}
+                    >
+                      on shift since {timeIn}
+                    </span>
+                  )}
+                  {!isActive && (
+                    <span
+                      className="muted"
+                      style={{ marginLeft: "8px", fontSize: "0.8rem" }}
+                    >
+                      off shift
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {isActive ? (
+                <button
+                  className="buttonSmall buttonSmall--danger"
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleClockOut(name)}
+                >
+                  Time Out
+                </button>
+              ) : (
+                <button
+                  className="button"
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleClockIn(name)}
+                  style={{ padding: "6px 16px", fontSize: "0.85rem" }}
+                >
+                  Time In
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-
-      {notClockedIn.length > 0 && (
-        <div style={{ marginBottom: "12px" }}>
-          <p className="muted" style={{ marginBottom: "8px" }}>
-            {hasPartial ? "Add more staff:" : "Who's working today?"}
-          </p>
-          {notClockedIn.map((name) => (
-            <label
-              key={name}
-              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 0", cursor: "pointer" }}
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(name)}
-                onChange={() => toggle(name)}
-              />
-              <span>{name}</span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: "8px" }}>
-        {notClockedIn.length > 0 && (
-          <button
-            className="button"
-            type="button"
-            disabled={isPending || selected.length === 0}
-            onClick={handleStartShift}
-          >
-            {hasPartial ? "Clock In Selected" : "Start Shift"}
-          </button>
-        )}
-        <button
-          className="buttonSecondary"
-          type="button"
-          onClick={handleDismiss}
-        >
-          Dismiss
-        </button>
+          );
+        })}
       </div>
     </section>
   );
