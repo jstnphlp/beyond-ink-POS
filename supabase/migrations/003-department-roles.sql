@@ -268,11 +268,25 @@ $$;
 -- 13. RLS Policies
 -- ============================================================
 
--- allowed_users: users can read their own row
+-- allowed_users: users can read their own row, owners can manage all
 DROP POLICY IF EXISTS "allowed_users_select_own_email" ON public.allowed_users;
 CREATE POLICY "allowed_users_select_own_email"
 ON public.allowed_users FOR SELECT TO authenticated
-USING (lower(email::text) = lower(coalesce((auth.jwt() ->> 'email'), '')));
+USING (
+  public.is_owner() OR lower(email::text) = lower(coalesce((auth.jwt() ->> 'email'), ''))
+);
+
+CREATE POLICY "allowed_users_insert_owner"
+ON public.allowed_users FOR INSERT TO authenticated
+WITH CHECK (public.is_owner());
+
+CREATE POLICY "allowed_users_update_owner"
+ON public.allowed_users FOR UPDATE TO authenticated
+USING (public.is_owner()) WITH CHECK (public.is_owner());
+
+CREATE POLICY "allowed_users_delete_owner"
+ON public.allowed_users FOR DELETE TO authenticated
+USING (public.is_owner());
 
 -- service_categories: dept-scoped read, owner-only write
 DROP POLICY IF EXISTS "service_categories_all_authenticated" ON public.service_categories;

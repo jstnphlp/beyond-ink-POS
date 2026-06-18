@@ -62,6 +62,9 @@ export async function addUser(email: string, role: UserRole): Promise<{ ok: bool
     .insert({ email: normalized, role });
 
   if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "This email is already in the allowlist. Change their role from the Users table below." };
+    }
     return { ok: false, error: error.message };
   }
 

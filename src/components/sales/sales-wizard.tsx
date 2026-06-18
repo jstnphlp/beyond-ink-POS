@@ -15,6 +15,7 @@ import { DeliveryDiscountStep } from "./delivery-discount-step";
 import { MaterialsStep } from "./materials-step";
 import { PaymentReviewStep } from "./payment-review-step";
 import { ServicesStep } from "./services-step";
+import { CashierSelect } from "./cashier-select";
 import { getWizardSteps } from "./wizard-config";
 
 function buildEmptySale(department: Department): DraftSaleInput {
@@ -219,13 +220,20 @@ export function SalesWizard({
           </div>
           <label className="salesField">
             <span>Cashier / Staff</span>
-            <input
-              type="text"
-              value={sale.cashierName}
-              onChange={(event) =>
-                updateSale({ ...sale, cashierName: event.target.value })
-              }
-            />
+            {department === "physical_dept" ? (
+              <CashierSelect
+                value={sale.cashierName}
+                onChange={(cashierName) => updateSale({ ...sale, cashierName })}
+              />
+            ) : (
+              <input
+                type="text"
+                value={sale.cashierName}
+                onChange={(event) =>
+                  updateSale({ ...sale, cashierName: event.target.value })
+                }
+              />
+            )}
           </label>
           <div className="salesMeta">
             {sale.transactionNumber ? `Transaction #${sale.transactionNumber}` : "Unsaved transaction"}

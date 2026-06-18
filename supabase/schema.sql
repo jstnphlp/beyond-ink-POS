@@ -20,6 +20,18 @@ using (
   lower(email::text) = lower(coalesce((auth.jwt() ->> 'email'), ''))
 );
 
+create policy "allowed_users_insert_owner"
+on public.allowed_users for insert to authenticated
+with check (public.is_owner());
+
+create policy "allowed_users_update_owner"
+on public.allowed_users for update to authenticated
+using (public.is_owner()) with check (public.is_owner());
+
+create policy "allowed_users_delete_owner"
+on public.allowed_users for delete to authenticated
+using (public.is_owner());
+
 comment on table public.allowed_users is
 'Application allowlist for Beyond Ink POS Google-authenticated users with department roles.';
 
@@ -213,15 +225,30 @@ $$;
 
 -- ─── RLS Policies ─────────────────────────────────────────────────
 
--- allowed_users: users can read their own row (to get their role)
+-- allowed_users: users can read their own row, owners can see and manage all
 drop policy if exists "allowed_users_select_own_email" on public.allowed_users;
 create policy "allowed_users_select_own_email"
 on public.allowed_users
 for select
 to authenticated
 using (
-  lower(email::text) = lower(coalesce((auth.jwt() ->> 'email'), ''))
+  public.is_owner() OR lower(email::text) = lower(coalesce((auth.jwt() ->> 'email'), ''))
 );
+
+drop policy if exists "allowed_users_insert_owner" on public.allowed_users;
+create policy "allowed_users_insert_owner"
+on public.allowed_users for insert to authenticated
+with check (public.is_owner());
+
+drop policy if exists "allowed_users_update_owner" on public.allowed_users;
+create policy "allowed_users_update_owner"
+on public.allowed_users for update to authenticated
+using (public.is_owner()) with check (public.is_owner());
+
+drop policy if exists "allowed_users_delete_owner" on public.allowed_users;
+create policy "allowed_users_delete_owner"
+on public.allowed_users for delete to authenticated
+using (public.is_owner());
 
 -- service_categories: department-scoped read, owner-only write
 drop policy if exists "service_categories_all_authenticated" on public.service_categories;
