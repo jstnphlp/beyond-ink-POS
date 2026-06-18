@@ -151,17 +151,13 @@ export async function getDraftTransactionById(
   };
 }
 
-export async function getTransactionHistory(
-  department?: Department,
-  limit = 50,
-): Promise<TransactionListItem[]> {
+export async function getTransactionHistory(department?: Department): Promise<TransactionListItem[]> {
   const supabase = await createServerClient();
   let query = supabase
     .from("sales_transactions")
     .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .eq("status", "completed")
-    .order("transaction_number", { ascending: false })
-    .limit(limit);
+    .order("transaction_number", { ascending: false });
 
   if (department) {
     query = query.eq("department", department);

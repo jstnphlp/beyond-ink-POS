@@ -32,14 +32,10 @@ export function TransactionHistory({
   transactions,
   showDepartment = false,
   isOwner = false,
-  currentLimit,
-  hasMore,
 }: {
   transactions: TransactionListItem[];
   showDepartment?: boolean;
   isOwner?: boolean;
-  currentLimit?: number;
-  hasMore?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -527,22 +523,6 @@ export function TransactionHistory({
             </table>
           </div>
         </section>
-      )}
-
-      {hasMore && currentLimit && (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "16px" }}>
-          <button
-            className="buttonSecondary"
-            type="button"
-            onClick={() => {
-              const params = new URLSearchParams(window.location.search);
-              params.set("limit", String(currentLimit + 50));
-              router.push(`?${params.toString()}`);
-            }}
-          >
-            Load more ({transactions.length} loaded)
-          </button>
-        </div>
       )}
 
       {renderReceiptModal()}
