@@ -23,15 +23,16 @@ export default async function SalesPage() {
   let drafts;
   let activeStaff: string[] = [];
   try {
-    [setupData, drafts] = await Promise.all([
+    const [sd, dr, sessions] = await Promise.all([
       getSalesSetupData(department),
       getDraftTransactions(department),
+      department === "physical_dept"
+        ? getActiveSessions()
+        : Promise.resolve([] as Awaited<ReturnType<typeof getActiveSessions>>),
     ]);
-
-    if (department === "physical_dept") {
-      const sessions = await getActiveSessions();
-      activeStaff = sessions.map((s) => s.staff_name);
-    }
+    setupData = sd;
+    drafts = dr;
+    activeStaff = sessions.map((s) => s.staff_name);
   } catch (err: unknown) {
     const message =
       err && typeof err === "object" && "message" in err

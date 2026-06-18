@@ -151,13 +151,17 @@ export async function getDraftTransactionById(
   };
 }
 
-export async function getTransactionHistory(department?: Department): Promise<TransactionListItem[]> {
+export async function getTransactionHistory(
+  department?: Department,
+  limit = 50,
+): Promise<TransactionListItem[]> {
   const supabase = await createServerClient();
   let query = supabase
     .from("sales_transactions")
     .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .eq("status", "completed")
-    .order("transaction_number", { ascending: false });
+    .order("transaction_number", { ascending: false })
+    .limit(limit);
 
   if (department) {
     query = query.eq("department", department);
@@ -170,13 +174,25 @@ export async function getTransactionHistory(department?: Department): Promise<Tr
   return (data ?? []) as TransactionListItem[];
 }
 
-export async function getAllTransactionsWithDepartment(): Promise<TransactionListItem[]> {
+export async function getAllTransactionsWithDepartment(
+  sinceDays?: number,
+  limit = 200,
+): Promise<TransactionListItem[]> {
   const supabase = await createServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("sales_transactions")
     .select("id, transaction_number, status, department, cashier_name, final_total, created_at, completed_at, cancelled_at")
     .in("status", ["completed", "cancelled"])
-    .order("transaction_number", { ascending: false });
+    .order("transaction_number", { ascending: false })
+    .limit(limit);
+
+  if (sinceDays) {
+    const since = new Date();
+    since.setDate(since.getDate() - sinceDays);
+    query = query.gte("created_at", since.toISOString());
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

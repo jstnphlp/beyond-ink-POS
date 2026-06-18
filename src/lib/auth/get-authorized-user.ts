@@ -1,8 +1,9 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
 
 import { createServerClient } from "@/lib/supabase/server";
 
-import { isEmailWhitelisted, normalizeEmail } from "./whitelist";
+import { normalizeEmail } from "./whitelist";
 import type { UserRole } from "./roles";
 
 export type AuthorizedUser = {
@@ -14,7 +15,7 @@ export type AuthorizedUser = {
 /**
  * Lightweight auth check — just verifies the Supabase session is valid.
  * The whitelist was already verified at login (callback route).
- * Returns role from the allowed_users table.
+ * Reads role from the `user-role` cookie set by middleware; falls back to DB.
  * Use this on pages that need fast loads.
  */
 export const getAuthenticatedUser = cache(async (): Promise<AuthorizedUser | null> => {
@@ -29,6 +30,14 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthorizedUser | nul
 
   const email = normalizeEmail(user.email) ?? user.email;
 
+  const cookieStore = await cookies();
+  const cachedRole = cookieStore.get("user-role")?.value;
+
+  if (cachedRole) {
+    return { email, id: user.id, role: cachedRole as UserRole };
+  }
+
+  // Fallback: query DB (cookie expired or missing)
   const { data: allowedUser } = await supabase
     .from("allowed_users")
     .select("role")
@@ -43,8 +52,8 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthorizedUser | nul
 });
 
 /**
- * Full auth check — verifies session AND whitelist.
- * Use this only where strict access control is needed (e.g., first login).
+ * Full auth check — verifies session AND whitelist in a single query.
+ * Use this only where strict access control is needed (e.g., server actions).
  */
 export async function getAuthorizedUser(): Promise<AuthorizedUser | null> {
   const supabase = await createServerClient();
@@ -58,25 +67,19 @@ export async function getAuthorizedUser(): Promise<AuthorizedUser | null> {
     return null;
   }
 
-  const allowed = await isEmailWhitelisted(
-    (normalizedEmail) =>
-      supabase.from("allowed_users").select("email").eq("email", normalizedEmail).maybeSingle(),
-    email,
-  );
-
-  if (!allowed) {
-    return null;
-  }
-
   const { data: allowedUser } = await supabase
     .from("allowed_users")
-    .select("role")
+    .select("email, role")
     .eq("email", email)
     .maybeSingle();
+
+  if (!allowedUser) {
+    return null;
+  }
 
   return {
     email,
     id: user!.id,
-    role: (allowedUser?.role as UserRole) ?? "physical_dept",
+    role: (allowedUser.role as UserRole) ?? "physical_dept",
   };
 }

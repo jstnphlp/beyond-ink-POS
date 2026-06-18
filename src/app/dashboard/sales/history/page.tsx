@@ -7,16 +7,25 @@ import { isOwner } from "@/lib/auth/roles";
 import { getTransactionHistory } from "@/lib/sales/queries";
 import type { Department } from "@/lib/sales/types";
 
-export default async function TransactionHistoryPage() {
+const PAGE_LIMIT = 50;
+
+export default async function TransactionHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ limit?: string }>;
+}) {
   const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
   }
 
+  const { limit: limitParam } = await searchParams;
+  const limit = Math.min(Math.max(Number(limitParam) || PAGE_LIMIT, PAGE_LIMIT), 500);
+
   // Owners see all transactions; department users see only their department
   const department = isOwner(user.role) ? undefined : (user.role as Department);
-  const transactions = await getTransactionHistory(department);
+  const transactions = await getTransactionHistory(department, limit);
 
   return (
     <SalesShell
@@ -27,6 +36,8 @@ export default async function TransactionHistoryPage() {
         transactions={transactions}
         showDepartment={isOwner(user.role)}
         isOwner={isOwner(user.role)}
+        currentLimit={limit}
+        hasMore={transactions.length >= limit}
       />
     </SalesShell>
   );

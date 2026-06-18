@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   if (isOwner(authorizedUser.role)) {
     // Owner dashboard: overview + per-department tabs
     const [allTransactions, allowedUsers, ...draftResults] = await Promise.all([
-      getAllTransactionsWithDepartment(),
+      getAllTransactionsWithDepartment(30),
       getAllowedUsers(),
       ...ALL_DEPARTMENTS.map((dept) => getDraftTransactions(dept)),
     ]);

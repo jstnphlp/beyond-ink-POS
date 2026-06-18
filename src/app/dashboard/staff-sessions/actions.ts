@@ -77,7 +77,7 @@ export async function getActiveSessions(): Promise<StaffSession[]> {
 
   const { data, error } = await supabase
     .from("staff_sessions")
-    .select("*")
+    .select("id, staff_name, time_in")
     .is("time_out", null)
     .order("time_in", { ascending: true });
 
@@ -96,7 +96,7 @@ export async function getStaffAttendance(
 
   let query = supabase
     .from("staff_sessions")
-    .select("*")
+    .select("id, staff_name, time_in, time_out, auto_logged_out")
     .not("time_out", "is", null)
     .order("time_in", { ascending: false });
 

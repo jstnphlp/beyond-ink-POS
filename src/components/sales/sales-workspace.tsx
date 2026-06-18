@@ -8,6 +8,7 @@ import type { DraftTransactionListItem, SalesSetupData } from "@/lib/sales/queri
 import type { DraftSaleInput, Department } from "@/lib/sales/types";
 
 import { DraftSidebar } from "./draft-sidebar";
+import { RefreshSettingsButton } from "./refresh-settings-button";
 import { SalesWizard } from "./sales-wizard";
 
 function buildEmptySale(department: Department): DraftSaleInput {
@@ -74,6 +75,9 @@ export function SalesWorkspace({
   return (
     <div className="salesLayout">
       <div className="salesLayout__main">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
+          <RefreshSettingsButton />
+        </div>
         <SalesWizard
           mode="create"
           department={department}
