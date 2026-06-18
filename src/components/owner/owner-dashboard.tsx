@@ -4,22 +4,26 @@ import { useState } from "react";
 
 import type { TransactionListItem, DraftTransactionListItem } from "@/lib/sales/queries";
 import type { Department } from "@/lib/sales/static-catalog";
+import type { AllowedUser } from "@/app/dashboard/actions";
 import { ALL_DEPARTMENTS, getDepartmentLabel } from "@/lib/auth/roles";
 
 import { OverviewTab } from "./overview-tab";
 import { DepartmentTab } from "./department-tab";
 import { DepartmentSelector } from "./department-selector";
+import { UserManagement } from "./user-management";
 
-type TabId = "overview" | Department;
+type TabId = "overview" | Department | "users";
 
 export function OwnerDashboard({
   allTransactions,
   departmentTransactions,
   departmentDrafts,
+  allowedUsers,
 }: {
   allTransactions: TransactionListItem[];
   departmentTransactions: Record<Department, TransactionListItem[]>;
   departmentDrafts: Record<Department, DraftTransactionListItem[]>;
+  allowedUsers: AllowedUser[];
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
@@ -29,6 +33,7 @@ export function OwnerDashboard({
       id: dept as TabId,
       label: getDepartmentLabel(dept),
     })),
+    { id: "users", label: "Users" },
   ];
 
   return (
@@ -60,6 +65,10 @@ export function OwnerDashboard({
             drafts={departmentDrafts[dept]}
           />
         ) : null,
+      )}
+
+      {activeTab === "users" && (
+        <UserManagement initialUsers={allowedUsers} />
       )}
     </>
   );

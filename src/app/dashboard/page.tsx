@@ -10,6 +10,7 @@ import {
   getAllTransactionsWithDepartment,
   getDraftTransactions,
 } from "@/lib/sales/queries";
+import { getAllowedUsers } from "@/app/dashboard/actions";
 import type { Department } from "@/lib/sales/types";
 import { ALL_DEPARTMENTS } from "@/lib/auth/roles";
 
@@ -25,7 +26,10 @@ export default async function DashboardPage() {
 
   if (isOwner(authorizedUser.role)) {
     // Owner dashboard: overview + per-department tabs
-    const allTransactions = await getAllTransactionsWithDepartment();
+    const [allTransactions, allowedUsers] = await Promise.all([
+      getAllTransactionsWithDepartment(),
+      getAllowedUsers(),
+    ]);
 
     const departmentTransactions: Record<Department, TransactionListItem[]> = {
       physical_dept: [],
@@ -69,6 +73,7 @@ export default async function DashboardPage() {
             allTransactions={allTransactions}
             departmentTransactions={departmentTransactions}
             departmentDrafts={departmentDrafts}
+            allowedUsers={allowedUsers}
           />
         </div>
       </main>
