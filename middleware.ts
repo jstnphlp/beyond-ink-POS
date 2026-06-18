@@ -88,9 +88,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // Set auth headers on the request so server components can read them
+  // via headers() without making a redundant getUser() network call.
+  // These are server-side headers — the client cannot modify them.
+  request.headers.set("x-user-id", user.id);
+  request.headers.set("x-user-email", user.email);
+  request.headers.set("x-user-role", role);
+
   // Owners can access everything
   if (role === "owner") {
-    return response;
+    return NextResponse.next({ request });
   }
 
   // Department users: redirect /dashboard root to /dashboard/sales
@@ -134,7 +141,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/sales", request.url));
   }
 
-  return response;
+  return NextResponse.next({ request });
 }
 
 export const config = {

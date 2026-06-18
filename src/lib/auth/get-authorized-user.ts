@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -13,12 +13,27 @@ export type AuthorizedUser = {
 };
 
 /**
- * Lightweight auth check — just verifies the Supabase session is valid.
- * The whitelist was already verified at login (callback route).
- * Reads role from the `user-role` cookie set by middleware; falls back to DB.
- * Use this on pages that need fast loads.
+ * Lightweight auth check for page server components.
+ *
+ * Reads user data from request headers set by middleware (x-user-id,
+ * x-user-email, x-user-role). This avoids the supabase.auth.getUser()
+ * network call since middleware already verified the JWT.
+ *
+ * Falls back to getUser() + DB query only when headers are missing
+ * (e.g. direct URL access that bypasses middleware).
  */
 export const getAuthenticatedUser = cache(async (): Promise<AuthorizedUser | null> => {
+  const headerStore = await headers();
+  const headerUserId = headerStore.get("x-user-id");
+  const headerEmail = headerStore.get("x-user-email");
+  const headerRole = headerStore.get("x-user-role");
+
+  if (headerUserId && headerEmail && headerRole) {
+    const email = normalizeEmail(headerEmail) ?? headerEmail;
+    return { email, id: headerUserId, role: headerRole as UserRole };
+  }
+
+  // Fallback: full auth check (direct URL access, middleware bypass, etc.)
   const supabase = await createServerClient();
   const {
     data: { user },
@@ -37,7 +52,6 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthorizedUser | nul
     return { email, id: user.id, role: cachedRole as UserRole };
   }
 
-  // Fallback: query DB (cookie expired or missing)
   const { data: allowedUser } = await supabase
     .from("allowed_users")
     .select("role")
