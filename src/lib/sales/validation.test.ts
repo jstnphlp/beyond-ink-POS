@@ -5,7 +5,7 @@ import type { DraftSaleInput } from "./types";
 
 const buildValidSale = (): DraftSaleInput => ({
   department: "physical_dept",
-  cashierName: "Mae",
+  cashierName: "Paul",
   status: "draft",
   serviceLines: [
     {

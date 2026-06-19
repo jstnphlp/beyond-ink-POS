@@ -38,7 +38,7 @@ const serviceLines: SaleServiceLineInput[] = [
 
 const buildDraftSaleInput = (): DraftSaleInput => ({
   department: "physical_dept",
-  cashierName: "Mae",
+  cashierName: "Paul",
   status: "draft",
   serviceLines,
   discount: { type: "fixed", value: 5 },

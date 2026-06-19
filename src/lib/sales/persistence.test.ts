@@ -12,7 +12,7 @@ function buildSale(): DraftSaleInput {
     transactionId: "txn-1",
     transactionNumber: 101,
     department: "physical_dept",
-    cashierName: "Mae",
+    cashierName: "Paul",
     status: "draft",
     serviceLines: [
       {
@@ -62,7 +62,7 @@ describe("buildTransactionPayload", () => {
 
     expect(buildTransactionPayload(sale, "draft")).toMatchObject({
       status: "draft",
-      cashier_name: "Mae",
+      cashier_name: "Paul",
       customer_name: "Ana",
       delivery_enabled: true,
       delivery_address: "123 Main",
@@ -93,7 +93,7 @@ describe("buildDraftPayload", () => {
     ).toMatchObject({
       transactionId: "txn-db-1",
       transactionNumber: 202,
-      cashierName: "Mae",
+      cashierName: "Paul",
     });
   });
 });
